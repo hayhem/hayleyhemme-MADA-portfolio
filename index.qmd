@@ -1,16 +1,16 @@
 ---
-title: "My website and data analysis portfolio"
+title: "Hayley Hemme's Website and Data Analysis Portfolio"
 output: 
   html_document:
     toc: FALSE
 ---
 
-# Hello
+# Hello!
 
-### And hello again
+### Welcome to **my website** and _data analysis portfolio._ 
 
-Welcome to **my website** and _data analysis portfolio._ 
+Please check back throughout the Spring 2023 semester to stay up to date with my progress in the MADA course.
 
 
 * Please use the `Menu Bar` above to look around.
-* Have fun!
+* Thank you!

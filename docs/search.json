@@ -1,0 +1,37 @@
+[
+  {
+    "objectID": "aboutme.html",
+    "href": "aboutme.html",
+    "title": "About me",
+    "section": "",
+    "text": "My name is Hayley Hemme and I’m a second-year master of public health student concentrating in epidemiology. I received my bachelor of science in Biology from Brenau University in 2017 where I concentrated in biomedical sciences. I have previous training as an HIV tester and counselor, and worked in the emergency department as a medical scribe and clinical technician before returning to school to pursue my masters.\nMy primary interest is in infectious disease epidemiology, specifically HIV. An area of research I am interested in is the use of molecular HIV surveillance to detect clusters, and how these methods might be used with conjunction with spatial methods to predict future clusters and help better inform resource allocation.\nI have taken multiple courses that utilize statistics, programming, and/or data analysis, including all the required core classes for my program, as well as Spatial Epidemiology and Introduction to Coding in R. I experience working with STATA, SAS, and R, and while I am most comfortable working in R, I know there is still a lot for me to learn! What I hope to get most out of this course is functional knowledge of variety of data analysis methods and to improve on communicating results to stakeholders from a variety of backgrounds.\n\nAn interesting fact about me\n\nI am an intermediate-level aerialist training on trapeze and aerial sling.\nI am exotic pet hobbyist with a fear of “bugs” and arachnids, despite having several in my collection.\nI enjoy doing tricks training with my dog, Punch.\n\n\n\n\nMe and my dog Punch at Boo-le-bark.\n\n\n\n\nMyth: The Data Speaks for Itself\nThe link above is to a post on blog that was recently shared with me. I appreciate the author’s insight to data reporting, however blunt they may be. This particular post speaks to the perceived objectivity of data. I think that it’s important to understand that data may be interpreted in different ways, even among those with data literacy. She advocates that data story-telling be presented alongside results of data in order to better explain real-world implications."
+  },
+  {
+    "objectID": "coding_exercise.html",
+    "href": "coding_exercise.html",
+    "title": "R Coding Exercise",
+    "section": "",
+    "text": "Placeholder file for the future R coding exercise."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Hayley Hemme’s Website and Data Analysis Portfolio",
+    "section": "",
+    "text": "Hello!\n\nWelcome to my website and data analysis portfolio.\nPlease check back throughout the Spring 2023 semester to stay up to date with my progress in the MADA course.\n\nPlease use the Menu Bar above to look around.\nThank you!"
+  },
+  {
+    "objectID": "tidytuesday_exercise.html",
+    "href": "tidytuesday_exercise.html",
+    "title": "Tidy Tuesday Exercise",
+    "section": "",
+    "text": "Placeholder file for the future Tidy Tuesday exercise."
+  },
+  {
+    "objectID": "visualization_exercise.html",
+    "href": "visualization_exercise.html",
+    "title": "Visualization Exercise",
+    "section": "",
+    "text": "Placeholder file for the future visualization exercise."
+  }
+]
