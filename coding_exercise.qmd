@@ -99,4 +99,5 @@ summary(fit2)
 ```
 
 Conclusions
+
 There is statistically significant evidence supporting an association between life expectancy and infant mortality. Life expectancy decreases by 2.49 years for every unit increase in infant mortality (p < 0.05). The data does not show statistically significant evidence of association between life expectancy and population size (p = 0.62).

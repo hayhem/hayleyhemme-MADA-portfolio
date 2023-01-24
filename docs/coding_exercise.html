@@ -168,7 +168,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item compact">
-    <a class="nav-link" href="./URL-TO-THIS-REPOSITORY-HERE"><i class="bi bi-github" role="img">
+    <a class="nav-link" href="https://github.com/hayhem/hayleyhemme-MADA-portfolio"><i class="bi bi-github" role="img">
 </i> 
  <span class="menu-text"></span></a>
   </li>  
@@ -345,22 +345,22 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>ple <span class="ot">&lt;-</span> africadata <span class="sc">%&gt;%</span> </span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="fu">c</span>(population, life_expectancy))</span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(imle)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(ple)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>'data.frame':   2907 obs. of  2 variables:
- $ infant_mortality: num  148 208 187 116 161 ...
- $ life_expectancy : num  47.5 36 38.3 50.3 35.2 ...</code></pre>
+ $ population     : num  11124892 5270844 2431620 524029 4829291 ...
+ $ life_expectancy: num  47.5 36 38.3 50.3 35.2 ...</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(imle)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(ple)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code> infant_mortality life_expectancy
- Min.   : 11.40   Min.   :13.20  
- 1st Qu.: 62.20   1st Qu.:48.23  
- Median : 93.40   Median :53.98  
- Mean   : 95.12   Mean   :54.38  
- 3rd Qu.:124.70   3rd Qu.:60.10  
- Max.   :237.40   Max.   :77.60  
- NA's   :226                     </code></pre>
+<pre><code>   population        life_expectancy
+ Min.   :    41538   Min.   :13.20  
+ 1st Qu.:  1605232   1st Qu.:48.23  
+ Median :  5570982   Median :53.98  
+ Mean   : 12235961   Mean   :54.38  
+ 3rd Qu.: 13888152   3rd Qu.:60.10  
+ Max.   :182201962   Max.   :77.60  
+ NA's   :51                         </code></pre>
 </div>
 </div>
 <p>Data Visualization</p>
@@ -520,7 +520,8 @@ Multiple R-squared:  0.005176,  Adjusted R-squared:  -0.01513
 F-statistic: 0.2549 on 1 and 49 DF,  p-value: 0.6159</code></pre>
 </div>
 </div>
-<p>Conclusions There is statistically significant evidence supporting an association between life expectancy and infant mortality. Life expectancy decreases by 2.49 years for every unit increase in infant mortality (p &lt; 0.05). The data does not show statistically significant evidence of association between life expectancy and population size (p = 0.62).</p>
+<p>Conclusions</p>
+<p>There is statistically significant evidence supporting an association between life expectancy and infant mortality. Life expectancy decreases by 2.49 years for every unit increase in infant mortality (p &lt; 0.05). The data does not show statistically significant evidence of association between life expectancy and population size (p = 0.62).</p>
 
 
 
