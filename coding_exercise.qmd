@@ -42,8 +42,8 @@ summary(imle)
 ple <- africadata %>% 
   select(c(population, life_expectancy))
 
-str(imle)
-summary(imle)
+str(ple)
+summary(ple)
 
 ```
 
