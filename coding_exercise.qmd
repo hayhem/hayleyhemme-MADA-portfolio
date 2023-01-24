@@ -6,14 +6,12 @@ output:
 ---
 
 Loading packages
-```{r}
-#| echo: false
+```{r, warning=FALSE}
 library(tidyverse) 
 library("dslabs")
 ```
 
 Loading data
-
 ```{r}
 help(gapminder)
 data("gapminder")
@@ -23,7 +21,6 @@ head(gapminder)
 ```
 
 Subsetting data from African countries
-
 ```{r}
 africadata <- gapminder %>% 
   filter(continent=="Africa")
@@ -35,7 +32,6 @@ summary(africadata)
 Creating new objects from 'africadata'-- 'imle' containing infant
 mortality and life expectancy, and 'ple' containing population size and
 life expectancy
-
 ```{r}
 imle <- africadata %>% 
   select(c(infant_mortality, life_expectancy))
@@ -52,26 +48,24 @@ summary(imle)
 ```
 
 Data Visualization
-
 ```{r}
 #| warning: false
 #| fig-cap: "Infant Mortality Rate and Life Expectancy in African Countries -- 1960 - 2015"
-imle %>% ggplot(aes(x=infant_mortality, y=life_expectancy)) + geom_point() + labs(x = "Infant Mortality (per 1,000 births)", y = "Life Expectancy (years)")
+imle %>% ggplot(aes(x=infant_mortality, y=life_expectancy)) + 
+  geom_point() + labs(x = "Infant Mortality (per 1,000 births)", y = "Life Expectancy (years)")
 ```
 
 ```{r}
-ple %>% ggplot(aes(x= log(population), y = life_expectancy)) +
+ple %>% ggplot(aes(x= log(population), y = life_expectancy)) + 
 geom_point() + labs(x="Log Population", y = "Life Expectancy (years)")
 ```
 
 Next, let's find out which years are missing data on infant mortality
-
 ```{r}
 with(subset(africadata, is.na(infant_mortality)), year)
 ```
 
 Subsetting data from the year 2000
-
 ```{r}
 africa2000 <- africadata %>% 
   filter(year == "2000")
@@ -81,7 +75,6 @@ summary(africa2000)
 ```
 
 Plotting data from African Countries in 2000
-
 ```{r}
 africa2000 %>% ggplot(aes(x=infant_mortality, y=life_expectancy)) +
 geom_point() + labs(x = "Infant Mortality (per 1,000 births)", y = "Life
@@ -95,7 +88,6 @@ title = "Population Size and Life Expectancy in African Countries --
 ```
 
 Fitting a simple model
-
 ```{r}
 fit1<-lm(life_expectancy ~ infant_mortality, data = africa2000)
 fit2<-lm(life_expectancy ~ population, data = africa2000)
@@ -106,5 +98,5 @@ summary(fit1)
 summary(fit2)
 ```
 
-##Conclusions
+Conclusions
 There is statistically significant evidence supporting an association between life expectancy and infant mortality. Life expectancy decreases by 2.49 years for every unit increase in infant mortality (p < 0.05). The data does not show statistically significant evidence of association between life expectancy and population size (p = 0.62).

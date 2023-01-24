@@ -3,9 +3,6 @@ title: "Tidy Tuesday Exercise"
 output: 
   html_document:
     toc: FALSE
-editor: 
-  markdown: 
-    wrap: 72
 ---
 
 Placeholder file for the future Tidy Tuesday exercise.
