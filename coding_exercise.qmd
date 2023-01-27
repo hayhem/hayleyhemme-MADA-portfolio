@@ -6,12 +6,14 @@ output:
 ---
 
 Loading packages
+
 ```{r, warning=FALSE}
 library(tidyverse) 
 library("dslabs")
 ```
 
 Loading data
+
 ```{r}
 help(gapminder)
 data("gapminder")
@@ -21,6 +23,7 @@ head(gapminder)
 ```
 
 Subsetting data from African countries
+
 ```{r}
 africadata <- gapminder %>% 
   filter(continent=="Africa")
@@ -29,9 +32,8 @@ str(africadata)
 summary(africadata)
 ```
 
-Creating new objects from 'africadata'-- 'imle' containing infant
-mortality and life expectancy, and 'ple' containing population size and
-life expectancy
+Creating new objects from 'africadata'-- 'imle' containing infant mortality and life expectancy, and 'ple' containing population size and life expectancy
+
 ```{r}
 imle <- africadata %>% 
   select(c(infant_mortality, life_expectancy))
@@ -48,6 +50,7 @@ summary(ple)
 ```
 
 Data Visualization
+
 ```{r}
 #| warning: false
 #| fig-cap: "Infant Mortality Rate and Life Expectancy in African Countries -- 1960 - 2015"
@@ -61,11 +64,13 @@ geom_point() + labs(x="Log Population", y = "Life Expectancy (years)")
 ```
 
 Next, let's find out which years are missing data on infant mortality
+
 ```{r}
 with(subset(africadata, is.na(infant_mortality)), year)
 ```
 
 Subsetting data from the year 2000
+
 ```{r}
 africa2000 <- africadata %>% 
   filter(year == "2000")
@@ -75,6 +80,7 @@ summary(africa2000)
 ```
 
 Plotting data from African Countries in 2000
+
 ```{r}
 africa2000 %>% ggplot(aes(x=infant_mortality, y=life_expectancy)) +
 geom_point() + labs(x = "Infant Mortality (per 1,000 births)", y = "Life
@@ -88,6 +94,7 @@ title = "Population Size and Life Expectancy in African Countries --
 ```
 
 Fitting a simple model
+
 ```{r}
 fit1<-lm(life_expectancy ~ infant_mortality, data = africa2000)
 fit2<-lm(life_expectancy ~ population, data = africa2000)
@@ -100,4 +107,52 @@ summary(fit2)
 
 Conclusions
 
-There is statistically significant evidence supporting an association between life expectancy and infant mortality. Life expectancy decreases by 2.49 years for every unit increase in infant mortality (p < 0.05). The data does not show statistically significant evidence of association between life expectancy and population size (p = 0.62).
+There is statistically significant evidence supporting an association between life expectancy and infant mortality. Life expectancy decreases by 2.49 years for every unit increase in infant mortality (p \< 0.05). The data does not show statistically significant evidence of association between life expectancy and population size (p = 0.62).
+
+# New Section
+
+This section has been added by Kailin (Kai) Chen.
+
+## Continued Data Visualization and Analysis
+
+### Country Contributions to Continental GDP
+
+```{r}
+# How Much Does Each Country Contribute to Continent's Overall GDP?
+## Setting Up Initial Data
+region_and_gdp <- africadata %>% filter(year == 1983) %>% group_by(region, gdp) %>% 
+  select(country, region, gdp)
+## Creating a New Variable for Continent's GDP
+region_and_gdp$total_gdp <- sum(region_and_gdp$gdp, na.rm = TRUE)
+# Percentage Contributed to Each 
+region_and_gdp <- region_and_gdp %>%
+  mutate(percentage = gdp/total_gdp * 100)
+
+# Graphing African Countries' Contributions to Continent's GDP
+ggplot(region_and_gdp, aes(x = percentage, y = country, group = region, fill = region)) + geom_col() + labs(x = "Percentage Contributed to Continent's GDP", y = "Nation", title = "Each Nation's Contribution to Continent's GDP in 1983")
+
+```
+
+### Looking at What Factors Affect Population in Asia
+
+```{r}
+# Creating a Model
+population_factors_model <- lm(population ~ fertility + life_expectancy + infant_mortality, data = gapminder %>% filter(continent == "Asia"))
+
+# Evaluating Model
+pop_factors_model_table <- tidy(summary(population_factors_model))
+```
+
+According to this model, fertility (p \< 0.001) and life expectancy (p \< 0.001) appear to significantly impact population in Asia since the null hypothesis that they do not *is* rejected. However, the null hypothesis that infant mortality does not affect population, in contrast, *isn't* rejected.
+
+## Fertility Over Time in Europe
+```{r}
+# Investigating Fertility Across Time
+ggplot(gapminder %>% filter(continent == "Europe"), aes(x = year, y = fertility, group = region, color = region)) + geom_point() + labs(x = "Year", y = "Fertility Rate", title = "Fertility Over Time in Europe")
+```
+## Tracking Australia's GDP Over Time
+```{r}
+# Investigating Australia's GDP Across Time
+ggplot(gapminder %>% filter(country == "Australia"), aes(x = year, y = gdp, color = year)) + geom_point() + geom_line() + labs(x = "Year", y = "GDP", title = "GDP Over Time for Australia")
+```
+
