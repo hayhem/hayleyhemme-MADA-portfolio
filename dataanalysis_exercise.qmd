@@ -1,0 +1,110 @@
+---
+title: "dataanalysis_exercise"
+editor: visual
+---
+https://data.cdc.gov/NCHS/NCHS-Drug-Poisoning-Mortality-by-State-United-Stat/jx6g-fdh6/data
+
+This dataset describes drug poisoning deaths in the United States from 1999 - 2015 by demographic factors, including age group, sex, and a simple race/ethnicity variable (NH White, NH Black, Hispanic). This dataset includes all drug poisoning deaths-- intentional(suicide and homicide), unintentional, and those with undetermined intent. While this dataset includes some data at the state-level, further investigation into trends of drug poisoning deaths at the state level is limited due to the fact that the data have been aggregated. 
+
+Let's load the packages we'll be using in this analysis.
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(lubridate)
+```
+
+Loading the dataset...
+```{r message=FALSE}
+df <- read_csv("dataanalysis_exercise/rawdata/NCHS_-_Drug_Poisoning_Mortality_by_State__United_States.csv")
+```
+
+Let's take a look at the data.
+```{r}
+glimpse(df)
+```
+
+Let's remove observations at the state-level by filtering for only observations where 'state' is the "United States" and remove columns that we won't be using in the analysis.
+```{r}
+df <- df %>%  filter(State == "United States") %>% 
+  select(!c(9:18)) %>% 
+  select(!State)
+```
+
+Next, let's reclass some of our variables. We will also reorder the dataset so that Year is sorted chronologically, then by age group and sex.
+```{r}
+df <- df %>% 
+  mutate(Age = factor(Age, level = (c("Less than 15 years", "15-24 years", "25-34 years",  "35-44 years", "45-54 years", "55-64 years", "65-74 years", "75+ years", "All Ages")))) %>% 
+  mutate(Sex = as.factor(Sex)) %>% 
+  mutate(`Race and Hispanic Origin` =  as.factor(`Race and Hispanic Origin`)) %>% 
+  arrange(Year, Age, Sex)
+```
+
+Next, let's remove observations where rates have been aggregated and remove the columns with NA's, 
+```{r}
+df <- df %>% filter(!Age == "All Ages") %>% 
+  filter(!Sex == "Both Sexes")
+
+glimpse(df)
+```
+
+To make some of these variable easier to work with, let's rename them. 
+```{r}
+df <- df %>% 
+  rename(race_eth = `Race and Hispanic Origin`) %>% 
+  rename(crude_dr = `Crude Death Rate`)       
+```
+
+Let's see if we can extract some data from other minorities....
+```{r}
+all <- df %>% filter(race_eth == "All Races-All Origins")
+nhw <- df %>% filter(race_eth == "Non-Hispanic White")
+nhb <- df %>% filter(race_eth == "Non-Hispanic Black")
+his <- df %>% filter(race_eth == "Hispanic")
+
+all$Other_Deaths <- all$Deaths - nhw$Deaths - nhb$Deaths - his$Deaths
+all$Other_Population <- all$Population - nhw$Population - nhb$Population - his$Population
+all$Other_crude_dr <- (all$Other_Deaths/all$Other_Population) * 100000
+all$Other_crude_dr <-  round(all$Other_crude_dr, 1)
+
+other <- all %>%  select(Year, Sex, Age, Other_Deaths, Other_Population, Other_crude_dr)
+
+other <- other %>% mutate(race_eth = "Non-Hispanic Other Race") %>% 
+  rename(Deaths = Other_Deaths) %>% 
+  rename(Population = Other_Population) %>% 
+  rename(crude_dr = Other_crude_dr)
+
+new_df <- full_join(nhb,nhw)
+new_df <- full_join(new_df, his)
+new_df <- full_join(new_df, other)
+
+```
+
+Before starting data visualization, let's reorder the race/ethnicity variable by decreasing crude death rate so that our legend for our plots is easier to interpret.
+```{r}
+new_df <- new_df %>% 
+  mutate(race_eth = fct_reorder(race_eth, -crude_dr)) 
+```
+
+```{r}
+saveRDS(new_df, "exercise4.rds")
+```
+
+Let's clear the environment and start fresh by loading up the RDS file we just saved!
+```{r message = F}
+rm(list = ls())
+
+df <- readRDS("exercise4.rds")
+
+```
+
+Summary Table
+```{r}
+knitr::kable(df)
+```
+
+Data Visualization and next steps...
+```{r message=FALSE}
+df %>%  ggplot(aes(x= Year, y = crude_dr, color = race_eth)) + geom_smooth(se = F) + labs(title = "Trends in Drug Poisoning Death Rates by Race/ Ethnicity,
+United States, 1999-2015", y = "Crude Death Rate (per 100,000)", x = "Year of Death", color = "Race/ Ethnicity")  + theme(legend.position="bottom") + guides(color=guide_legend(nrow=1,byrow=T)) +  theme(legend.title.align = 0.5, legend.direction = "vertical", legend.box.just = "center") + theme(plot.title = element_text(hjust = 0.5, size = 12))
+```
+
+My idea with this dataset is to explore trends in drug poisoning deaths across a number of demographic factors.
