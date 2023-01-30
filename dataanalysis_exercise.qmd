@@ -107,4 +107,4 @@ df %>%  ggplot(aes(x= Year, y = crude_dr, color = race_eth)) + geom_smooth(se = 
 United States, 1999-2015", y = "Crude Death Rate (per 100,000)", x = "Year of Death", color = "Race/ Ethnicity")  + theme(legend.position="bottom") + guides(color=guide_legend(nrow=1,byrow=T)) +  theme(legend.title.align = 0.5, legend.direction = "vertical", legend.box.just = "center") + theme(plot.title = element_text(hjust = 0.5, size = 12))
 ```
 
-My idea with this dataset is to explore trends in drug poisoning deaths across a number of demographic factors... 
+My idea with this dataset is to explore trends in drug poisoning deaths across a number of demographic factors. Variables of interest are age group (especially ages 25-44), sex, and race/ethnicity. 
