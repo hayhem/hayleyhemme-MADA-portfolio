@@ -1,10 +1,10 @@
 ---
-title: "dataanalysis_exercise"
+title: "Data Analysis Exercise"
 output:
   html_document:
     toc: FALSE
 ---
-https://data.cdc.gov/NCHS/NCHS-Drug-Poisoning-Mortality-by-State-United-Stat/jx6g-fdh6/data
+
 
 This dataset describes drug poisoning deaths in the United States from 1999 - 2015 by demographic factors, including age group, sex, and a simple race/ethnicity variable (NH White, NH Black, Hispanic). This dataset includes all drug poisoning deaths-- intentional(suicide and homicide), unintentional, and those with undetermined intent. While this dataset includes some data at the state-level, further investigation into trends of drug poisoning deaths at the state level is limited due to the fact that the data have been aggregated. 
 
@@ -87,15 +87,14 @@ new_df <- new_df %>%
 ```
 
 ```{r}
-saveRDS(new_df, "exercise4.rds")
+saveRDS(new_df, "dataanalysis_exercise/processeddata/exercise4.rds")
 ```
 
 Let's clear the environment and start fresh by loading up the RDS file we just saved!
 ```{r message = F}
 rm(list = ls())
 
-df <- readRDS("exercise4.rds")
-
+df <- readRDS("dataanalysis_exercise/processeddata/exercise4.rds")
 ```
 
 Summary Table
@@ -109,4 +108,4 @@ df %>%  ggplot(aes(x= Year, y = crude_dr, color = race_eth)) + geom_smooth(se = 
 United States, 1999-2015", y = "Crude Death Rate (per 100,000)", x = "Year of Death", color = "Race/ Ethnicity")  + theme(legend.position="bottom") + guides(color=guide_legend(nrow=1,byrow=T)) +  theme(legend.title.align = 0.5, legend.direction = "vertical", legend.box.just = "center") + theme(plot.title = element_text(hjust = 0.5, size = 12))
 ```
 
-My idea with this dataset is to explore trends in drug poisoning deaths across a number of demographic factors.
+My idea with this dataset is to explore trends in drug poisoning deaths across a number of demographic factors... 
