@@ -136,6 +136,7 @@ ggplot(region_and_gdp, aes(x = percentage, y = country, group = region, fill = r
 ### Looking at What Factors Affect Population in Asia
 
 ```{r}
+library(broom)
 # Creating a Model
 population_factors_model <- lm(population ~ fertility + life_expectancy + infant_mortality, data = gapminder %>% filter(continent == "Asia"))
 

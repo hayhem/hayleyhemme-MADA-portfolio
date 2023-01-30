@@ -163,6 +163,10 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
     <a class="dropdown-item" href="././tidytuesday_exercise.html">
  <span class="dropdown-text">Tidy Tuesday Exercise</span></a>
   </li>  
+        <li>
+    <a class="dropdown-item" href="././dataanalysis_exercise.html">
+ <span class="dropdown-text">Data Analysis Exercise</span></a>
+  </li>  
     </ul>
   </li>
 </ul>
@@ -522,8 +526,82 @@ F-statistic: 0.2549 on 1 and 49 DF,  p-value: 0.6159</code></pre>
 </div>
 <p>Conclusions</p>
 <p>There is statistically significant evidence supporting an association between life expectancy and infant mortality. Life expectancy decreases by 2.49 years for every unit increase in infant mortality (p &lt; 0.05). The data does not show statistically significant evidence of association between life expectancy and population size (p = 0.62).</p>
+<section id="new-section" class="level1">
+<h1>New Section</h1>
+<p>This section has been added by Kailin (Kai) Chen.</p>
+<section id="continued-data-visualization-and-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="continued-data-visualization-and-analysis">Continued Data Visualization and Analysis</h2>
+<section id="country-contributions-to-continental-gdp" class="level3">
+<h3 class="anchored" data-anchor-id="country-contributions-to-continental-gdp">Country Contributions to Continental GDP</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="co"># How Much Does Each Country Contribute to Continent's Overall GDP?</span></span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="do">## Setting Up Initial Data</span></span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>region_and_gdp <span class="ot">&lt;-</span> africadata <span class="sc">%&gt;%</span> <span class="fu">filter</span>(year <span class="sc">==</span> <span class="dv">1983</span>) <span class="sc">%&gt;%</span> <span class="fu">group_by</span>(region, gdp) <span class="sc">%&gt;%</span> </span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(country, region, gdp)</span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a><span class="do">## Creating a New Variable for Continent's GDP</span></span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a>region_and_gdp<span class="sc">$</span>total_gdp <span class="ot">&lt;-</span> <span class="fu">sum</span>(region_and_gdp<span class="sc">$</span>gdp, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Percentage Contributed to Each </span></span>
+<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a>region_and_gdp <span class="ot">&lt;-</span> region_and_gdp <span class="sc">%&gt;%</span></span>
+<span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">percentage =</span> gdp<span class="sc">/</span>total_gdp <span class="sc">*</span> <span class="dv">100</span>)</span>
+<span id="cb40-10"><a href="#cb40-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-11"><a href="#cb40-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Graphing African Countries' Contributions to Continent's GDP</span></span>
+<span id="cb40-12"><a href="#cb40-12" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(region_and_gdp, <span class="fu">aes</span>(<span class="at">x =</span> percentage, <span class="at">y =</span> country, <span class="at">group =</span> region, <span class="at">fill =</span> region)) <span class="sc">+</span> <span class="fu">geom_col</span>() <span class="sc">+</span> <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Percentage Contributed to Continent's GDP"</span>, <span class="at">y =</span> <span class="st">"Nation"</span>, <span class="at">title =</span> <span class="st">"Each Nation's Contribution to Continent's GDP in 1983"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Removed 7 rows containing missing values (`position_stack()`).</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="coding_exercise_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="looking-at-what-factors-affect-population-in-asia" class="level3">
+<h3 class="anchored" data-anchor-id="looking-at-what-factors-affect-population-in-asia">Looking at What Factors Affect Population in Asia</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(broom)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'broom' was built under R version 4.2.2</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Creating a Model</span></span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>population_factors_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(population <span class="sc">~</span> fertility <span class="sc">+</span> life_expectancy <span class="sc">+</span> infant_mortality, <span class="at">data =</span> gapminder <span class="sc">%&gt;%</span> <span class="fu">filter</span>(continent <span class="sc">==</span> <span class="st">"Asia"</span>))</span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Evaluating Model</span></span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>pop_factors_model_table <span class="ot">&lt;-</span> <span class="fu">tidy</span>(<span class="fu">summary</span>(population_factors_model))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>According to this model, fertility (p &lt; 0.001) and life expectancy (p &lt; 0.001) appear to significantly impact population in Asia since the null hypothesis that they do not <em>is</em> rejected. However, the null hypothesis that infant mortality does not affect population, in contrast, <em>isn’t</em> rejected.</p>
+</section>
+</section>
+<section id="fertility-over-time-in-europe" class="level2">
+<h2 class="anchored" data-anchor-id="fertility-over-time-in-europe">Fertility Over Time in Europe</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Investigating Fertility Across Time</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(gapminder <span class="sc">%&gt;%</span> <span class="fu">filter</span>(continent <span class="sc">==</span> <span class="st">"Europe"</span>), <span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> fertility, <span class="at">group =</span> region, <span class="at">color =</span> region)) <span class="sc">+</span> <span class="fu">geom_point</span>() <span class="sc">+</span> <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Year"</span>, <span class="at">y =</span> <span class="st">"Fertility Rate"</span>, <span class="at">title =</span> <span class="st">"Fertility Over Time in Europe"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Removed 39 rows containing missing values (`geom_point()`).</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="coding_exercise_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="tracking-australias-gdp-over-time" class="level2">
+<h2 class="anchored" data-anchor-id="tracking-australias-gdp-over-time">Tracking Australia’s GDP Over Time</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Investigating Australia's GDP Across Time</span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(gapminder <span class="sc">%&gt;%</span> <span class="fu">filter</span>(country <span class="sc">==</span> <span class="st">"Australia"</span>), <span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> gdp, <span class="at">color =</span> year)) <span class="sc">+</span> <span class="fu">geom_point</span>() <span class="sc">+</span> <span class="fu">geom_line</span>() <span class="sc">+</span> <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Year"</span>, <span class="at">y =</span> <span class="st">"GDP"</span>, <span class="at">title =</span> <span class="st">"GDP Over Time for Australia"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Removed 5 rows containing missing values (`geom_point()`).</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Removed 5 rows containing missing values (`geom_line()`).</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="coding_exercise_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
 
 
+</section>
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
