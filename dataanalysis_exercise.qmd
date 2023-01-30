@@ -1,6 +1,8 @@
 ---
 title: "dataanalysis_exercise"
-editor: visual
+output:
+  html_document:
+    toc: FALSE
 ---
 https://data.cdc.gov/NCHS/NCHS-Drug-Poisoning-Mortality-by-State-United-Stat/jx6g-fdh6/data
 
