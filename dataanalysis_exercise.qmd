@@ -108,3 +108,93 @@ United States, 1999-2015", y = "Crude Death Rate (per 100,000)", x = "Year of De
 ```
 
 My idea with this dataset is to explore trends in drug poisoning deaths across a number of demographic factors. Variables of interest are age group (especially ages 25-44), sex, and race/ethnicity. 
+
+
+## This section added by CONNOR ROSS
+Hi Hayley! Thanks for the Intro. This is a really meaningful and cool topic.
+
+
+
+```{r}
+# You know I got to have some tidyverseeeee...
+library(tidyverse)
+
+
+# Let's take a look at what we got...
+str(df)
+summary(df)
+
+# Sweet summary stats but I'm more of a visual person...
+
+## Aggregate Death Count by Sex
+df %>%
+  ggplot(aes(x = factor(Sex), y = Deaths, fill = factor(Sex))) + 
+  geom_bar(stat = "identity") +
+  labs(title = "Deaths by Sex", x = "Sex (Male or Female)",
+       y = "Aggregate Deaths (All Age Groups from 1999 - 2015)", fill = "Sex") +
+  theme_dark()
+
+
+## Aggregate Death Count by Race/Ethnicity
+df %>%
+  ggplot(aes(x = factor(race_eth), y = Deaths, fill = factor(race_eth))) + 
+  geom_bar(stat = "identity") +
+  labs(title = "Drug Poison Deaths by Race/Ethnicity", x = "Race/Ethnicity",
+       y = "Aggregate Deaths (All Races/Ethnicities from 1999 - 2015)",
+       fill = "Race/Ethnicity") +
+  theme_dark()
+
+df %>%
+  ggplot(aes(x = factor(race_eth), y = log(Deaths), fill = factor(race_eth))) + 
+  geom_bar(stat = "identity") +
+  labs(title = "Log Drug Poison Deaths by Race/Ethnicity in the US", 
+       x = "Race/Ethnicity",
+       y = "Log Deaths (All Races/Ethnicities from 1999 - 2015)",
+       fill = "Race/Ethnicity") +
+  theme_dark()
+
+## Aggregate Death Count by Age Group
+df %>%
+  ggplot(aes(x = factor(Age), y = Deaths, fill = factor(Age))) + 
+  geom_bar(stat = "identity") +
+  labs(title = "Deaths by Age", x = "Age Group",
+       y = "Aggregate Deaths (from 1999 - 2015)", fill = "Age") +
+  theme_dark()
+
+df %>%
+  filter(Age == "25-34 years" | Age == "35-44 years") %>%
+  ggplot(aes(x = factor(Age), y = Deaths, fill = factor(Age))) + 
+  geom_bar(stat = "identity") +
+  labs(title = "Deaths by Age", x = "Age Group",
+       y = "Aggregate Deaths (from 1999 - 2015)", fill = "Age") +
+  theme_dark()
+
+
+## CDR Trends by Age Group
+df %>%
+  ggplot(aes(x = Year, y = crude_dr, color = Age)) +
+  geom_smooth(se = FALSE) +
+  labs(title = "Drug Poison Death Rate Trends by Age Group in the US", 
+       x = "Year of Death", 
+       y = "Crude Death Rate (per 100,000)") +
+  theme_dark()
+
+### CDR Trends by Sex
+df %>%
+  ggplot(aes(x = Year, y = crude_dr, color = Sex)) +
+  geom_smooth(se = FALSE) +
+  labs(title = "Drug Poison Death Rate Trends by Sex in the US", 
+       x = "Year of Death", 
+       y = "Crude Death Rate (per 100,000)") +
+  theme_dark()
+
+df %>%
+  filter(Age == "25-34 years" | Age == "35-44 years") %>%
+  ggplot(aes(x = Year, y = crude_dr, color = Age)) +
+  geom_smooth(se = FALSE) +
+  labs(title = "Drug Poison Death Rate Trends by Age Group in the US", 
+       x = "Year of Death", 
+       y = "Crude Death Rate (per 100,000)") +
+  theme_dark()
+
+```
