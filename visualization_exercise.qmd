@@ -14,7 +14,7 @@ The plot we'll be trying to replicate is from [Our World in Data](https://ourwor
 ![](images/deaths-from-hiv-by-age.png){fig-align="center"}
 
 ```{r message=FALSE}
-HIV_GBD <- read_csv("visualization_exercise/deaths-from-hiv-by-age.csv")
+HIV_GBD <- read_csv("data/deaths-from-hiv-by-age.csv")
 glimpse(HIV_GBD)
 ```
 
@@ -64,13 +64,7 @@ Now let's plot it
 sums_long %>% ggplot(aes(x= Year, y = Deaths, color=Age, fill = Age))  + geom_area() + labs(title = "Deaths from HIV/AIDS , by age, World, 1990 to 2019") + theme_bw()
 ```
 
-Wait! Something is not looking right with the data... our counts are significantly higher than those shown in the original plot. Let's see if we find out why...
-
-```{r echo = false}
-view(HIV_GBD)
-```
-
-Let's load 'naniar' to see if there is anything unexpected about the data.
+Wait! Something is not looking right with the data... our counts are significantly higher than those shown in the original plot. Let's see if we find out why... Let's load 'naniar' to see if there is anything unexpected about the data.
 
 ```{r}
 library(naniar)
