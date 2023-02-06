@@ -5,4 +5,152 @@ output:
     toc: FALSE
 ---
 
-Placeholder file for the future visualization exercise.
+```{r warning = FALSE}
+library(tidyverse)
+```
+
+The plot we'll be trying to replicate is from [Our World in Data](https://ourworldindata.org/hiv-aids).
+
+![](images/deaths-from-hiv-by-age.png){fig-align="center"}
+
+```{r message=FALSE}
+HIV_GBD <- read_csv("visualization_exercise/deaths-from-hiv-by-age.csv")
+glimpse(HIV_GBD)
+```
+
+Let's group by year and find the sum of deaths for each year in each age group.
+
+```{r}
+year_sums_70 <- HIV_GBD %>% group_by(Year) %>% summarize(`70+ years` = sum(`Deaths - HIV/AIDS - Sex: Both - Age: 70+ years (Number)`))  
+
+year_sums_50 <- HIV_GBD %>% group_by(Year) %>% summarize(`50-69 years` = sum(`Deaths - HIV/AIDS - Sex: Both - Age: 50-69 years (Number)`))  
+
+year_sums_15 <- HIV_GBD %>% group_by(Year) %>% summarize(`15-49 years`  = sum(`Deaths - HIV/AIDS - Sex: Both - Age: 15-49 years (Number)`))  
+
+year_sums_5 <- HIV_GBD %>% group_by(Year) %>% summarize(`5-14 years` = sum(`Deaths - HIV/AIDS - Sex: Both - Age: 5-14 years (Number)`)) 
+
+year_sums_0 <- HIV_GBD %>% group_by(Year) %>% summarize(`Under 5 years` = sum(`Deaths - HIV/AIDS - Sex: Both - Age: Under 5 (Number)`)) 
+```
+
+Let's join the datasets and check to see how things are looking.
+
+```{r}
+year_sums <- full_join (year_sums_70, year_sums_50)
+year_sums <- full_join (year_sums, year_sums_15)
+year_sums <- full_join (year_sums, year_sums_5)
+year_sums <- full_join (year_sums, year_sums_0)
+
+glimpse(year_sums)
+```
+
+Nice! Let's make things a bit easier to plot by pivoting the data into long format.
+
+```{r}
+sums_long <- year_sums %>% pivot_longer(2:6, names_to = "Age", values_to = "Deaths")
+```
+
+We'll make age group a factor...
+
+```{r}
+sums_long <- sums_long %>% mutate(Age = as.factor(Age), 
+  Age = factor(
+      Age,
+      level = c("Under 5 years", "5-14 years","15-49 years", "50-69 years", "70+ years")))
+```
+
+Now let's plot it
+
+```{r}
+sums_long %>% ggplot(aes(x= Year, y = Deaths, color=Age, fill = Age))  + geom_area() + labs(title = "Deaths from HIV/AIDS , by age, World, 1990 to 2019") + theme_bw()
+```
+
+Wait! Something is not looking right with the data... our counts are significantly higher than those shown in the original plot. Let's see if we find out why...
+
+```{r echo = false}
+view(HIV_GBD)
+```
+
+Let's load 'naniar' to see if there is anything unexpected about the data.
+
+```{r}
+library(naniar)
+vis_miss(HIV_GBD)
+```
+
+It looks like the column 'Entity' contains data for both countries and continents! Let's try to correct this by dropping observations missing a country code.
+
+```{r}
+HIV_GBD <- HIV_GBD %>% drop_na(Code)
+```
+
+```{r}
+HIV_GBD %>% group_by(Year) %>%  slice_max(`Deaths - HIV/AIDS - Sex: Both - Age: 70+ years (Number)`)
+```
+
+That explains it! Things were getting counted twice. Let's making new dataframe where containing only observations for the 'World'.
+
+```{r}
+world <- HIV_GBD %>% filter(grepl("OWID_WRL", Code))
+```
+
+Re-running the previous code...
+
+```{r}
+world70 <- world %>% group_by(Year) %>% summarize(`70+ years` = sum(`Deaths - HIV/AIDS - Sex: Both - Age: 70+ years (Number)`))  
+
+world50 <- world %>% group_by(Year) %>% summarize(`50-69 years` = sum(`Deaths - HIV/AIDS - Sex: Both - Age: 50-69 years (Number)`))  
+
+world15 <- world %>% group_by(Year) %>% summarize(`15-49 years`  = sum(`Deaths - HIV/AIDS - Sex: Both - Age: 15-49 years (Number)`))  
+
+world5 <- world %>% group_by(Year) %>% summarize(`5-14 years` = sum(`Deaths - HIV/AIDS - Sex: Both - Age: 5-14 years (Number)`)) 
+
+world0 <- world %>% group_by(Year) %>% summarize(`Under 5 years` = sum(`Deaths - HIV/AIDS - Sex: Both - Age: Under 5 (Number)`)) 
+
+world <- full_join (world70, world50)
+world <- full_join (world, world15)
+world <- full_join (world, world5)
+world <- full_join (world, world0)
+
+world_long <- world %>% pivot_longer(2:6, names_to = "Age", values_to = "Deaths") %>% 
+  mutate(Age = as.factor(Age), 
+  Age = factor(
+      Age,
+      level = c("Under 5 years", "5-14 years","15-49 years", "50-69 years", "70+ years")))
+```
+
+```{r}
+world_long %>% ggplot(aes(x= Year, y = Deaths, color=Age, fill = Age))  + geom_area() + labs(title = "Deaths from HIV/AIDS , by age, World, 1990 to 2019")
+```
+
+Let's try to better match the original plot. We'll first reverse the order of the age groups
+
+```{r}
+world_long <- world_long %>% mutate(Age = fct_rev(Age))
+```
+
+Then we'll load some useful packages. We'll load 'scales' so that we can add 'Million' to the plot' and RColorBrewer.
+
+```{r}
+library(scales)
+library(RColorBrewer)
+library(extrafont)
+```
+
+```{r}
+world_long %>% ggplot(aes(x= Year, y = Deaths, color = Age, fill = Age)) + geom_area(alpha = 0.7) + labs(title = "Deaths from HIV/AIDS , by age, World, 1990 to 2019") + theme_bw() + 
+  scale_fill_brewer(palette = "Oranges", direction = -1) + scale_color_brewer(palette = "Oranges", direction = -1) + 
+  theme(plot.title = element_text(family = "serif")) + theme(axis.title.x=element_blank(), axis.title.y=element_blank(), axis.ticks.y = element_blank()) + 
+  scale_x_continuous(breaks=c(1990, 1995, 2000, 2005, 2010, 2015, 2019)) + scale_y_continuous(breaks=c(2e5, 4e5, 6e5, 8e5, 1e6, 1.2e6, 1.4e6, 1.6e6, 1.8e6), labels = c("200,000","400,000","600,000","800,000" , "1 Million", "1.2 Million", "1.4 Million", "1.6 Million", "1.8 Million")) + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_line(linetype = "dashed"), panel.border = element_blank() , 
+    axis.line.x = element_line(color = "gray"))   
+```
+
+Not exactly perfect, but we're getting pretty close!
+
+About the code-- alpha is used to the change transparency; I reversed the order of colors in the scale_x\_brewer by using direction = -1; I manually specified my breaks for both axes, and add a label to the y axis. I removed major grid-lines and the border around the plot using theme and element blank, and changed the line type of the minor grid-lines, made the x axis line gray.
+
+Some websites I referred to were:
+
+[ggplot2 Reference and Examples (Part 2) - Colours](http://rstudio-pubs-static.s3.amazonaws.com/5312_98fc1aba2d5740dd849a5ab797cc2c8d.html)
+
+[Statistics Globe](https://statisticsglobe.com/scale-colour-fill-brewer-rcolorbrewer-package-r)
