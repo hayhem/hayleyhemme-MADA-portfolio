@@ -2,11 +2,13 @@
 title: "Visualization Exercise"
 output:
   html_document:
-    toc: FALSE
+  code-fold: true
 ---
 
-```{r warning = FALSE}
+```{r warning = FALSE, message=FALSE}
 library(tidyverse)
+library(here)
+here()
 ```
 
 The plot we'll be trying to replicate is from [Our World in Data](https://ourworldindata.org/hiv-aids).
@@ -14,45 +16,49 @@ The plot we'll be trying to replicate is from [Our World in Data](https://ourwor
 ![](images/deaths-from-hiv-by-age.png){fig-align="center"}
 
 ```{r message=FALSE}
-HIV_GBD <- read_csv("data/deaths-from-hiv-by-age.csv")
+HIV_GBD <- read_csv(here("data/deaths-from-hiv-by-age.csv"))
 glimpse(HIV_GBD)
 ```
 
 Let's group by year and find the sum of deaths for each year in each age group.
 
-```{r}
-year_sums_70 <- HIV_GBD %>% group_by(Year) %>% summarize(`70+ years` = sum(`Deaths - HIV/AIDS - Sex: Both - Age: 70+ years (Number)`))  
+```{r wrap = TRUE}
+year_sums_70 <- HIV_GBD %>% group_by(Year) %>% 
+  summarize(`70+ years` = sum(`Deaths - HIV/AIDS - Sex: Both - Age: 70+ years (Number)`))  
 
-year_sums_50 <- HIV_GBD %>% group_by(Year) %>% summarize(`50-69 years` = sum(`Deaths - HIV/AIDS - Sex: Both - Age: 50-69 years (Number)`))  
+year_sums_50 <- HIV_GBD %>% group_by(Year) %>% 
+  summarize(`50-69 years` = sum(`Deaths - HIV/AIDS - Sex: Both - Age: 50-69 years (Number)`))  
 
 year_sums_15 <- HIV_GBD %>% group_by(Year) %>% summarize(`15-49 years`  = sum(`Deaths - HIV/AIDS - Sex: Both - Age: 15-49 years (Number)`))  
 
-year_sums_5 <- HIV_GBD %>% group_by(Year) %>% summarize(`5-14 years` = sum(`Deaths - HIV/AIDS - Sex: Both - Age: 5-14 years (Number)`)) 
+year_sums_5 <- HIV_GBD %>% group_by(Year) %>% 
+  summarize(`5-14 years` = sum(`Deaths - HIV/AIDS - Sex: Both - Age: 5-14 years (Number)`)) 
 
-year_sums_0 <- HIV_GBD %>% group_by(Year) %>% summarize(`Under 5 years` = sum(`Deaths - HIV/AIDS - Sex: Both - Age: Under 5 (Number)`)) 
+year_sums_0 <- HIV_GBD %>% group_by(Year) %>% 
+  summarize(`Under 5 years` = sum(`Deaths - HIV/AIDS - Sex: Both - Age: Under 5 (Number)`)) 
 ```
 
 Let's join the datasets and check to see how things are looking.
 
 ```{r}
-year_sums <- full_join (year_sums_70, year_sums_50)
-year_sums <- full_join (year_sums, year_sums_15)
-year_sums <- full_join (year_sums, year_sums_5)
-year_sums <- full_join (year_sums, year_sums_0)
+year_sums <-list(year_sums_70, year_sums_50, year_sums_15, year_sums_5, year_sums_0)
+year_sums <- year_sums %>% reduce(full_join)
 
 glimpse(year_sums)
 ```
 
 Nice! Let's make things a bit easier to plot by pivoting the data into long format.
 
-```{r}
-sums_long <- year_sums %>% pivot_longer(2:6, names_to = "Age", values_to = "Deaths")
+```{r wrap = TRUE}
+sums_long <- year_sums %>% 
+  pivot_longer(2:6, names_to = "Age", values_to = "Deaths")
 ```
 
 We'll make age group a factor...
 
-```{r}
-sums_long <- sums_long %>% mutate(Age = as.factor(Age), 
+```{r wrap = TRUE}
+sums_long <- sums_long %>%
+  mutate(Age = as.factor(Age), 
   Age = factor(
       Age,
       level = c("Under 5 years", "5-14 years","15-49 years", "50-69 years", "70+ years")))
@@ -60,8 +66,10 @@ sums_long <- sums_long %>% mutate(Age = as.factor(Age),
 
 Now let's plot it
 
-```{r}
-sums_long %>% ggplot(aes(x= Year, y = Deaths, color=Age, fill = Age))  + geom_area() + labs(title = "Deaths from HIV/AIDS , by age, World, 1990 to 2019") + theme_bw()
+```{r wrap = TRUE}
+sums_long %>% ggplot(aes(x= Year, y = Deaths, color=Age, fill = Age))  +
+  geom_area() + labs(title = "Deaths from HIV/AIDS , by age, World, 1990 to 2019") + 
+  theme_bw()
 ```
 
 Wait! Something is not looking right with the data... our counts are significantly higher than those shown in the original plot. Let's see if we find out why... Let's load 'naniar' to see if there is anything unexpected about the data.
@@ -77,66 +85,85 @@ It looks like the column 'Entity' contains data for both countries and continent
 HIV_GBD <- HIV_GBD %>% drop_na(Code)
 ```
 
-```{r}
-HIV_GBD %>% group_by(Year) %>%  slice_max(`Deaths - HIV/AIDS - Sex: Both - Age: 70+ years (Number)`)
+```{r wrap = TRUE}
+HIV_GBD %>% group_by(Year) %>%
+  slice_max(`Deaths - HIV/AIDS - Sex: Both - Age: 70+ years (Number)`)
 ```
 
 That explains it! Things were getting counted twice. Let's making new dataframe where containing only observations for the 'World'.
 
 ```{r}
-world <- HIV_GBD %>% filter(grepl("OWID_WRL", Code))
+world <- HIV_GBD %>% 
+  filter(grepl("OWID_WRL", Code))
 ```
 
 Re-running the previous code...
 
-```{r}
-world70 <- world %>% group_by(Year) %>% summarize(`70+ years` = sum(`Deaths - HIV/AIDS - Sex: Both - Age: 70+ years (Number)`))  
+```{r wrap = TRUE}
+world70 <- world %>% group_by(Year) %>% 
+  summarize(`70+ years` = sum(`Deaths - HIV/AIDS - Sex: Both - Age: 70+ years (Number)`))  
 
-world50 <- world %>% group_by(Year) %>% summarize(`50-69 years` = sum(`Deaths - HIV/AIDS - Sex: Both - Age: 50-69 years (Number)`))  
+world50 <- world %>% group_by(Year) %>% 
+  summarize(`50-69 years` = sum(`Deaths - HIV/AIDS - Sex: Both - Age: 50-69 years (Number)`))  
 
-world15 <- world %>% group_by(Year) %>% summarize(`15-49 years`  = sum(`Deaths - HIV/AIDS - Sex: Both - Age: 15-49 years (Number)`))  
+world15 <- world %>% group_by(Year) %>% 
+  summarize(`15-49 years`  = sum(`Deaths - HIV/AIDS - Sex: Both - Age: 15-49 years (Number)`))  
 
-world5 <- world %>% group_by(Year) %>% summarize(`5-14 years` = sum(`Deaths - HIV/AIDS - Sex: Both - Age: 5-14 years (Number)`)) 
+world5 <- world %>% group_by(Year) %>% 
+  summarize(`5-14 years` = sum(`Deaths - HIV/AIDS - Sex: Both - Age: 5-14 years (Number)`)) 
 
-world0 <- world %>% group_by(Year) %>% summarize(`Under 5 years` = sum(`Deaths - HIV/AIDS - Sex: Both - Age: Under 5 (Number)`)) 
+world0 <- world %>% group_by(Year) %>% 
+  summarize(`Under 5 years` = sum(`Deaths - HIV/AIDS - Sex: Both - Age: Under 5 (Number)`)) 
 
-world <- full_join (world70, world50)
-world <- full_join (world, world15)
-world <- full_join (world, world5)
-world <- full_join (world, world0)
+world <- list(world70, world50, world15, world5, world0)
+world <- world %>% reduce(full_join)
 
-world_long <- world %>% pivot_longer(2:6, names_to = "Age", values_to = "Deaths") %>% 
+world_long <- world %>% 
+  pivot_longer(2:6, names_to = "Age", values_to = "Deaths") %>% 
   mutate(Age = as.factor(Age), 
   Age = factor(
       Age,
       level = c("Under 5 years", "5-14 years","15-49 years", "50-69 years", "70+ years")))
 ```
 
-```{r}
-world_long %>% ggplot(aes(x= Year, y = Deaths, color=Age, fill = Age))  + geom_area() + labs(title = "Deaths from HIV/AIDS , by age, World, 1990 to 2019")
+```{r wrap = TRUE}
+world_long %>% ggplot(aes(x= Year, y = Deaths, color=Age, fill = Age)) + 
+  geom_area() + labs(title = "Deaths from HIV/AIDS , by age, World, 1990 to 2019")
 ```
 
 Let's try to better match the original plot. We'll first reverse the order of the age groups
 
 ```{r}
-world_long <- world_long %>% mutate(Age = fct_rev(Age))
+world_long <- world_long %>% 
+  mutate(Age = fct_rev(Age))
 ```
 
-Then we'll load some useful packages. We'll load 'scales' so that we can add 'Million' to the plot' and RColorBrewer.
+Then we'll load some useful packages. We'll load 'scales' so that we can add 'Million' to the plot and RColorBrewer.
 
-```{r}
+```{r message = FALSE, warning=FALSE}
 library(scales)
 library(RColorBrewer)
 library(extrafont)
 ```
 
-```{r}
-world_long %>% ggplot(aes(x= Year, y = Deaths, color = Age, fill = Age)) + geom_area(alpha = 0.7) + labs(title = "Deaths from HIV/AIDS , by age, World, 1990 to 2019") + theme_bw() + 
-  scale_fill_brewer(palette = "Oranges", direction = -1) + scale_color_brewer(palette = "Oranges", direction = -1) + 
-  theme(plot.title = element_text(family = "serif")) + theme(axis.title.x=element_blank(), axis.title.y=element_blank(), axis.ticks.y = element_blank()) + 
-  scale_x_continuous(breaks=c(1990, 1995, 2000, 2005, 2010, 2015, 2019)) + scale_y_continuous(breaks=c(2e5, 4e5, 6e5, 8e5, 1e6, 1.2e6, 1.4e6, 1.6e6, 1.8e6), labels = c("200,000","400,000","600,000","800,000" , "1 Million", "1.2 Million", "1.4 Million", "1.6 Million", "1.8 Million")) + 
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_line(linetype = "dashed"), panel.border = element_blank() , 
-    axis.line.x = element_line(color = "gray"))   
+```{r wrap = TRUE}
+plot <- world_long %>% ggplot(aes(x= Year, y = Deaths, color = Age, fill = Age)) +
+  geom_area(alpha = 0.7) + 
+  labs(title = "Deaths from HIV/AIDS , by age, World, 1990 to 2019") + 
+  theme_bw() + scale_fill_brewer(palette = "Oranges",
+direction = -1) + scale_color_brewer(palette = "Oranges", direction = -1) +
+  theme(plot.title = element_text(family = "serif")) +
+  theme(axis.title.x=element_blank(), axis.title.y=
+          element_blank(), axis.ticks.y = element_blank()) +
+  scale_x_continuous(breaks=c(1990, 1995, 2000, 2005, 2010, 2015, 2019)) + 
+  scale_y_continuous(breaks=c(2e5, 4e5, 6e5, 8e5, 1e6, 1.2e6, 1.4e6, 1.6e6, 1.8e6), 
+ labels = c("200,000","400,000","600,000","800,000" , "1 Million", "1.2 Million", 
+            "1.4 Million", "1.6 Million", "1.8 Million")) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_line(
+    linetype = "dashed"),
+panel.border = element_blank(), axis.line.x = element_line(color = "gray"))
+
+plot
 ```
 
 Not exactly perfect, but we're getting pretty close!
@@ -148,3 +175,29 @@ Some websites I referred to were:
 [ggplot2 Reference and Examples (Part 2) - Colours](http://rstudio-pubs-static.s3.amazonaws.com/5312_98fc1aba2d5740dd849a5ab797cc2c8d.html)
 
 [Statistics Globe](https://statisticsglobe.com/scale-colour-fill-brewer-rcolorbrewer-package-r)
+
+Let's try to directly label the age groups to the plot to better match the original. First, we'll need to subset the data to just the last observation for x.
+
+```{r}
+w_19 <- world_long %>% filter(Year == 2019)
+```
+
+Let's also make a new vector containing the age groups.
+```{r}
+ag <- factor(c("Under 5 years", "5-14 years","15-49 years", "50-69 years", "70+ years"))
+ag<- factor(ag, level = c("Under 5 years", "5-14 years","15-49 years", "50-69 years", "70+ years"), fct_rev(ag))
+```
+
+Let's see how this works...
+```{r wrap = TRUE}
+plot + geom_text(data = w_19, aes(x = 2021.5, y = c(8.7e5, 7.5e5, 4e5, 8.5e4, 100), label = Age),
+    alpha= 2) + theme(legend.position = "none") +
+      scale_y_continuous(breaks=c(2e5, 4e5, 6e5, 8e5, 1e6, 1.2e6, 1.4e6, 1.6e6, 1.8e6), 
+ labels = c("200,000","400,000","600,000","800,000" , "1 Million", "1.2 Million", 
+            "1.4 Million", "1.6 Million", "1.8 Million"),
+ sec.axis = sec_axis(~ ., breaks = c(8.7e5, 7.5e5, 4e5, 8.5e4, 100, labels = ag)))
+```
+
+Not how I hoped, but I think that I'm on the right track... Some things that I definitely want to work on are making the 'Under  5 Years' label more visible and adding direct labels onto the plot. 
+
+Something to note about this is that when I called scale_y_continuous, it overwrote the previous y scale with labels that I had specified. To get around this, I added that part again and it worked well. Notice the warning message.
