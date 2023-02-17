@@ -5,4 +5,171 @@ output:
     toc: FALSE
 ---
 
-Placeholder file for the future Tidy Tuesday exercise.
+```{r message=FALSE, warning=FALSE}
+library(here)
+library(epiDisplay)
+library(tidyverse)
+library(plotly)
+```
+
+This data was obtained from the github 
+Importing the data
+```{r message=FALSE, warning=FALSE}
+age_gaps <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-02-14/age_gaps.csv')
+
+write_csv(age_gaps, here("data/age_gaps.csv"))
+```
+
+Let's start by taking a `glimpse` at the dataset.
+```{r}
+glimpse(age_gaps)
+```
+
+Let's take a look at some summary statistics on age_difference.
+```{r}
+age_gaps %>% pull(age_difference) %>% summary()
+```
+
+Let's see how many unique movies are included in the dataset.
+```{r}
+age_gaps %>% pull(movie_name) %>% n_distinct()
+```
+There are `830` unique movies. 
+
+Let's also look at how many different directors appear in the dataset.
+```{r}
+age_gaps %>% pull(director) %>% n_distinct()
+```
+There are `510` unique directors.
+
+Let's make a new variable for th the number of movies released each decade in the dataset. We'll do this by performing integer division using `%/%` and multiplying by `10`.
+```{r}
+age_gaps <- age_gaps %>% 
+  mutate(decade_released = 10 * (release_year %/% 10))
+```
+
+```{r}
+age_gaps %>% 
+  count(decade_released) %>% 
+  ggplot() + geom_line(aes(decade_released, n)) +
+  scale_x_continuous(breaks = seq(1930,2020, 10))
+```
+We can see that the decade with the most movie releases was 2000.
+
+Let's create variable for the largest age difference by decade released.
+```{r}
+age_gaps <- age_gaps %>%
+  group_by(decade_released) %>% 
+  mutate(max_age_diff = max(age_difference))
+
+age_gaps %>% 
+   ggplot() + 
+  geom_line(data = age_gaps, aes(x = decade_released, y= max_age_diff))  + 
+  scale_x_continuous(breaks = seq(1930,2020, 10))
+```
+
+Let's see if we can combine these plots and add some design elements.
+```{r}
+plot <- age_gaps %>% 
+  count(decade_released) %>% 
+  ggplot() + geom_line(aes(decade_released, n), color = "red", linewidth = 1) +
+    geom_line(data = age_gaps, aes(x = decade_released, y= max_age_diff),
+              color = "pink" , linewidth = 1)  +
+  scale_x_continuous(breaks = seq(1930,2020, 10)) + 
+  labs(x = "Year of Movie Release", y = "Number of Movies Released",
+       title = "Number of Movies Released with Love Interests and Largest Age Gap,
+       by Decade") +
+  theme_classic()
+
+plot 
+```
+
+Let's make the plot interactive!
+```{r}
+remove_buttons <- list('zoom2d','pan2d','lasso2d', 'select2d','zoomIn2d',
+                              'zoomOut2d','autoScale2d','hoverClosestCartesian',
+                              'toggleSpikelines','hoverCompareCartesian')
+
+ggplotly(plot) %>% config(modeBarButtonsToRemove = remove_buttons)  
+```
+
+Next, let's switch gears entirely and find out what the most common name is among directors. We'll need to load tidytext().
+```{r message=FALSE, warning=FALSE}
+library(tidytext)
+
+age_gaps %>% ungroup() %>%
+  distinct(director) %>% 
+  unnest_tokens(word, director) %>% 
+  count(word, sort = TRUE) %>% 
+  top_n(15)
+```
+
+Let's see what the most common names are among directors with a 'large' age difference. Let's use observations with an age difference \>= 15 years, which is \>= 75th quantile.
+```{r}
+age_gaps %>% pull(age_difference) %>% quantile()
+
+age_gaps %>% ungroup() %>%
+  filter(age_difference >= 15) %>% 
+  distinct(director) %>% 
+  unnest_tokens(word, director) %>% 
+  count(word, sort = TRUE) %>%
+  top_n(15)
+```
+
+While the top 5 directors are identical to the previous list, `Marc` appears in the 6th most frequent among directors of movies with an age difference greater than or equal to 15 years.
+
+Let's find out which movies these `Marc`'s directed.
+```{r}
+age_gaps %>%
+   filter(grepl("Marc ", director)) %>%
+   arrange(desc(release_year))
+```
+
+So, it looks like our filter picked up a sneaky `Marc`... `Jean-Marc`. Let's remove this observation by specifying that the director's name must *begin* with Marc.
+```{r}
+marc <- age_gaps %>%
+  filter(grepl("^Marc ", director))
+
+marc %>%
+  pull(movie_name) %>%
+  unique()
+```
+
+Let's find the average age difference for these `Marc`-directed love movies
+```{r}
+marc %>%
+  pull(age_difference) %>%
+  summary()
+```
+
+```{r}
+marc %>%
+  pull(director) %>%
+  unique()
+```
+
+Let's also rename the director variable and drop `Marc` from the rows using `str_replace`.
+```{r}
+library(stringr)
+
+marc$director <- str_replace(marc$director, "Marc ", "")
+
+marc <- marc %>% rename(`Director Marc` = director)
+```
+
+```{r}
+marc %>% ggplot(aes(x= release_year, y= age_difference, color= `Director Marc`)) +
+  geom_line() +
+  geom_point() +
+  scale_x_continuous(breaks = seq(2001, 2019, 3)) +
+  labs(x = "Year of Movie Release", y = "Age Difference in Years",
+       title = "Age Gaps in Movies by Marc(s) by Year Released")
+```
+
+While my approach to this exercise was obviously silly, I learned a lot about the tidytext package, which I'd never used before, and a useful trick for a function I use regularly!
+
+
+```{r}
+write_csv(age_gaps, here("data/age_gaps_edited.csv"))
+
+```
