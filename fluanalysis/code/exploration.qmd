@@ -1,0 +1,77 @@
+---
+title: "Exploration"
+editor: visual
+---
+
+```{r warning =FALSE, message = FALSE}
+library(here)
+library(tidyverse)
+```
+
+```{r}
+flu <- readRDS(here("fluanalysis/data/processed_data/flu.rds"))
+```
+
+Let's take a look at some summary statistics for BodyTemp and Nausea
+
+```{r}
+summary(flu$BodyTemp)
+summary(flu$Nausea)
+```
+
+Next, let's take a look at this distribution of BodyTemp.
+
+```{r}
+flu  %>% ggplot(aes(x = BodyTemp))  + geom_histogram(bins = 20)
+```
+
+I'm also interested in the intensity variables... Let's make a box plot of a couple of these with BodyTemp.
+
+```{r}
+flu %>% ggplot(aes(x= BodyTemp, y = Myalgia, color = Myalgia)) +
+  geom_boxplot() 
+
+flu %>% ggplot(aes(x= BodyTemp, y = Weakness, color = Weakness)) +
+  geom_boxplot()
+```
+
+Median body temperature appears to increase with increasing intensity of myalgia/ weakness.
+
+Let's look at this as a histogram for weakness.
+```{r}
+flu  %>% ggplot(aes(x = BodyTemp, fill = Weakness)) + 
+  geom_histogram(bins = 20) 
+```
+
+Weakness by Nausea contingency table
+```{r}
+table(flu$Weakness,flu$Nausea)
+```
+
+Myalgia by Nausea contingency table
+```{r}
+table(flu$Myalgia,flu$Nausea)
+```
+
+Cough Intensity by Nausea contingency table
+```{r}
+table(flu$CoughIntensity,flu$Nausea)
+```
+
+Now let's take visualize this.
+```{r warning= FALSE}
+flu %>% ggplot(aes(x= Weakness, fill = CoughIntensity)) +
+  geom_histogram(stat="count")
+
+flu %>% ggplot(aes(x= Weakness, fill = Myalgia)) +
+  geom_histogram(stat="count")
+
+flu %>% ggplot(aes(x= Weakness, fill = Nausea)) +
+  geom_histogram(stat="count")
+
+```
+
+Weakness by Nausea contingency table
+```{r}
+table(flu$Weakness,flu$Myalgia)
+```

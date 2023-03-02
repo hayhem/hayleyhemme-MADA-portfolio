@@ -1,4 +1,4 @@
-project: 
+project:
   type: website
   output-dir: docs
 
@@ -18,8 +18,14 @@ website:
             href: ./tidytuesday_exercise.html
           - text: "Data Analysis Exercise"
             href: ./dataanalysis_exercise.html
-
-
+      - text: "Flu Analysis"
+        menu:
+          - text: "Wrangling"
+            href: ./fluanalysis/code/wrangling.html
+          - text: "Exploration"
+            href: ./fluanalysis/code/exploration.html
+          - text: "Fitting"
+            href: ./fluanalysis/code/fitting.html
     right:
       - icon: github 
         href: "https://github.com/hayhem/hayleyhemme-MADA-portfolio"       
@@ -30,5 +36,3 @@ format:
     highlight: zenburn
     css: styles.css
     toc: FALSE
-
-

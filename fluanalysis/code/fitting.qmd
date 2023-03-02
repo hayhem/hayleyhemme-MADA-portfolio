@@ -1,0 +1,99 @@
+---
+title: "Model fitting"
+---
+
+```{r warning=FALSE, message=FALSE}
+library(here)
+library(tidymodels)
+library(performance)
+library(tidyverse)
+```
+
+```{r}
+flu <- readRDS(here("fluanalysis/data/processed_data/flu.rds"))
+```
+
+Univariate model for
+```{r}
+lm_mod <- linear_reg() %>% 
+  set_engine("lm") %>% 
+  fit(BodyTemp ~ Weakness, data = flu)
+
+tidy(lm_mod)
+
+glance(lm_mod)
+```
+
+Multivariate model (full)
+```{r}
+lm_full <- linear_reg() %>%
+  set_engine("lm") %>% 
+  fit(BodyTemp ~ . ,data = flu)
+
+tidy(lm_full)
+glance(lm_full)
+```
+
+Comparing model performance for univariate vs multivariate linear model.
+```{r warning=FALSE}
+compare_performance(lm_mod, lm_full)
+```
+The full model appears to be a better fit than univariate model with a lower AIC of 2307.8 and higher R2(adj.) of 0.086.
+
+Let's try to make some predictions for the full model. We'll use the mean body temperature we found earlier
+```{r}
+new_points <- expand.grid(BodyTemp = 98.94, 
+                          Weakness = c("None", "Mild", "Moderate", "Severe"))
+
+##Mean prediction
+mean_pred <- predict(lm_mod, new_data = new_points)
+mean_pred
+
+#Confidence intervals
+conf_int_pred <- predict(lm_mod, 
+                         new_data = new_points, 
+                         type = "conf_int")
+conf_int_pred
+```
+
+```{r}
+plot_data <- 
+  new_points %>% 
+  bind_cols(mean_pred) %>% 
+  bind_cols(conf_int_pred)
+
+ggplot(plot_data, aes(x = Weakness)) + 
+  geom_point(aes(y = .pred)) + 
+  geom_errorbar(aes(ymin = .pred_lower, 
+                    ymax = .pred_upper),
+                width = .2) + 
+  labs(y = "Body Temperature (F)")
+```
+
+
+Fitting univariate model - Logistic regression
+```{r}
+log_mod <- logistic_reg() %>% 
+  set_engine("glm") %>% 
+  fit(Nausea ~ Myalgia, data = flu)
+
+tidy(log_mod)
+
+#Results
+glance(log_mod)
+```
+Fitting the full model - logistic regression
+```{r}
+log_full <- logistic_reg() %>% 
+  set_engine("glm") %>% 
+  fit(Nausea ~ ., data = flu)
+
+tidy(log_full)
+glance(log_full)
+```
+
+Comparing model performance for univariate vs multiple logistic regression model.
+```{r warning=FALSE}
+compare_performance(log_mod, log_full)
+```
+The full model appears to be a better fit than the univariate model, with an lower AIC of 821.5.

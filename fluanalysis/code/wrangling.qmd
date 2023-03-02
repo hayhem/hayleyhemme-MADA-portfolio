@@ -1,0 +1,38 @@
+---
+title: "Wrangling"
+editor: visual
+---
+
+Load packages
+
+```{r message=FALSE, warning=FALSE}
+library(here)
+library(tidyverse)
+```
+
+Load the data
+
+```{r}
+flu <- readRDS(here("fluanalysis/data/raw_data/SympAct_Any_Pos.Rda"))
+```
+
+Let's take a look at the dataset using `glimpse`
+
+```{r}
+glimpse(flu)
+```
+
+Now that we have an idea of what the data looks like, let's drop variables we won't be using in our analysis using select and remove missing observations.
+
+```{r}
+flu <- flu %>%
+  select(-contains(c("Score", "Flu")),
+         -starts_with(c("DxName", "Activity", "Total", "Unique.Visit"))) %>%
+  drop_na()
+
+glimpse(flu)
+```
+
+```{r}
+saveRDS(flu, here("fluanalysis/data/processed_data/flu.rds"))
+```
