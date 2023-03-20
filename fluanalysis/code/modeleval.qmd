@@ -1,0 +1,129 @@
+---
+title: "Model Evaluation"
+editor: visual
+---
+
+```{r warning =FALSE, message = FALSE}
+library(here)
+library(tidyverse)
+library(tidymodels)
+```
+
+```{r}
+flu <- readRDS(here("fluanalysis/data/processed_data/flu.rds"))
+```
+
+```{r}
+# setting the seed 
+set.seed(222)
+# Put 3/4 of the data into the training set 
+data_split <- initial_split(flu, prop = 3/4)
+
+# Create data frames for the two sets:
+train_data <- training(data_split)
+test_data  <- testing(data_split)
+```
+
+```{r}
+n_flu <- 
+  recipe(Nausea ~ ., data = train_data) 
+```
+
+Setting logistic regression engine
+```{r}
+lr_mod <- 
+  logistic_reg() %>% 
+  set_engine("glm")
+```
+
+Creating workflow function using logistic regression model and training data
+```{r}
+flu_wflow <- 
+  workflow() %>% 
+  add_model(lr_mod) %>% 
+  add_recipe(n_flu)
+```
+
+Creating function that can be used to prepare the recipe and train the model
+```{r}
+flu_fit <- 
+  flu_wflow %>% 
+  fit(data = train_data)
+```
+
+Extracting the model objects from the workflow
+```{r}
+flu_fit %>% 
+  extract_fit_parsnip() %>% 
+  tidy()
+```
+Usiing trained workflow to make predictions on testing data
+```{r}
+predict(flu_fit, test_data)
+
+flu_aug <- 
+  augment(flu_fit, test_data)
+
+# The data look like: 
+flu_aug %>%
+  select(Nausea, .pred_No, .pred_Yes)
+```
+Plotting ROC_AUC
+```{r}
+flu_aug %>% 
+  roc_curve(truth = Nausea, .pred_No) %>% 
+  autoplot()
+
+flu_aug %>% 
+  roc_auc(truth = Nausea, .pred_No) 
+```
+
+Alternative model
+```{r}
+flu_r <- 
+  recipe(Nausea ~ BodyTemp, data = train_data) 
+```
+
+Creating workflow function using lr model function and training data
+```{r}
+flu_wflow_r <- 
+  workflow() %>% 
+  add_model(lr_mod) %>% 
+  add_recipe(flu_r)
+```
+
+Creating function that can be used to prepare the recipe and train the model
+```{r}
+flu_fit_r <- 
+  flu_wflow_r %>% 
+  fit(data = train_data)
+```
+
+Extracting the model objects from the workflow
+```{r}
+flu_fit_r %>% 
+  extract_fit_parsnip() %>% 
+  tidy()
+```
+
+Using trained workflow to make predictions on testing data
+```{r}
+predict(flu_fit_r, test_data)
+
+flu_aug_r <- 
+  augment(flu_fit_r, test_data)
+
+# The data look like: 
+flu_aug_r %>%
+  select(Nausea, .pred_No, .pred_Yes)
+```
+Plotting ROC_AUC
+```{r}
+flu_aug_r %>% 
+  roc_curve(truth = Nausea, .pred_No) %>% 
+  autoplot()
+
+flu_aug_r %>% 
+  roc_auc(truth = Nausea, .pred_No) 
+```
+The model using only body temperature as a predictor performed much more poorly than the full model!
