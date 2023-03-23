@@ -278,3 +278,5 @@ flu_aug_bt_rn %>%
 ```
 
 The model with all predictors has a lower RMSE.
+
+# This above section added by KATIE WELLS
