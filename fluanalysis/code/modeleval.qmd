@@ -30,6 +30,7 @@ n_flu <-
 ```
 
 Setting logistic regression engine
+
 ```{r}
 lr_mod <- 
   logistic_reg() %>% 
@@ -37,6 +38,7 @@ lr_mod <-
 ```
 
 Creating workflow function using logistic regression model and training data
+
 ```{r}
 flu_wflow <- 
   workflow() %>% 
@@ -45,6 +47,7 @@ flu_wflow <-
 ```
 
 Creating function that can be used to prepare the recipe and train the model
+
 ```{r}
 flu_fit <- 
   flu_wflow %>% 
@@ -52,12 +55,15 @@ flu_fit <-
 ```
 
 Extracting the model objects from the workflow
+
 ```{r}
 flu_fit %>% 
   extract_fit_parsnip() %>% 
   tidy()
 ```
+
 Usiing trained workflow to make predictions on testing data
+
 ```{r}
 predict(flu_fit, test_data)
 
@@ -68,7 +74,9 @@ flu_aug <-
 flu_aug %>%
   select(Nausea, .pred_No, .pred_Yes)
 ```
+
 Plotting ROC_AUC
+
 ```{r}
 flu_aug %>% 
   roc_curve(truth = Nausea, .pred_No) %>% 
@@ -79,12 +87,14 @@ flu_aug %>%
 ```
 
 Alternative model
+
 ```{r}
 flu_r <- 
   recipe(Nausea ~ Myalgia, data = train_data) 
 ```
 
 Creating workflow function using lr model function and training data
+
 ```{r}
 flu_wflow_r <- 
   workflow() %>% 
@@ -93,6 +103,7 @@ flu_wflow_r <-
 ```
 
 Creating function that can be used to prepare the recipe and train the model
+
 ```{r}
 flu_fit_r <- 
   flu_wflow_r %>% 
@@ -100,6 +111,7 @@ flu_fit_r <-
 ```
 
 Extracting the model objects from the workflow
+
 ```{r}
 flu_fit_r %>% 
   extract_fit_parsnip() %>% 
@@ -107,6 +119,7 @@ flu_fit_r %>%
 ```
 
 Using trained workflow to make predictions on testing data
+
 ```{r}
 predict(flu_fit_r, test_data)
 
@@ -117,7 +130,9 @@ flu_aug_r <-
 flu_aug_r %>%
   select(Nausea, .pred_No, .pred_Yes)
 ```
+
 Plotting ROC_AUC
+
 ```{r}
 flu_aug_r %>% 
   roc_curve(truth = Nausea, .pred_No) %>% 
@@ -126,4 +141,140 @@ flu_aug_r %>%
 flu_aug_r %>% 
   roc_auc(truth = Nausea, .pred_No) 
 ```
+
 The model using only weakness as a predictor for nausea performed more poorly than the full model
+
+# This section added by KATIE WELLS
+
+Model Evaluation Part 2
+
+### BodyTemp with all predictors
+
+```{r}
+# setting the seed 
+set.seed(333)
+# Put 3/4 of the data into the training set 
+data_split2 <- initial_split(flu, prop = 3/4)
+
+# Create data frames for the two sets:
+train_data2 <- training(data_split2)
+test_data2  <- testing(data_split2)
+```
+
+Creating recipe
+
+```{r}
+n_flu_bt <- 
+  recipe(BodyTemp ~ ., data = train_data2) 
+```
+
+Setting engine
+
+```{r}
+lr_mod2 <- linear_reg() %>%
+  set_engine("lm")
+```
+
+Creating workflow function using linear regression model and training data
+
+```{r}
+flu_wflow_bt <- 
+  workflow() %>% 
+  add_model(lr_mod2) %>% 
+  add_recipe(n_flu_bt)
+flu_wflow_bt
+```
+
+Creating function that can be used to prepare the recipe and train the model
+
+```{r}
+flu_fit_bt <- 
+  flu_wflow_bt %>% 
+  fit(data = train_data2)
+```
+
+Extracting the model objects from the workflow
+
+```{r}
+flu_fit_bt %>% 
+  extract_fit_parsnip() %>% 
+  tidy()
+```
+
+Using trained workflow to make predictions on testing data
+
+```{r}
+predict(flu_fit_bt, test_data2)
+
+flu_aug_bt <- 
+  augment(flu_fit_bt, test_data2)
+```
+
+```{r}
+# The data look like: 
+flu_aug_bt %>%
+  select(BodyTemp, .pred)
+```
+
+RMSE
+
+```{r}
+flu_aug_bt %>% 
+  rmse(truth = BodyTemp, .pred) 
+```
+
+### BodyTemp with main predictor RunnyNose
+
+Creating recipe
+
+```{r}
+n_flu_bt_rn <- 
+  recipe(BodyTemp ~ RunnyNose, data = train_data2) 
+```
+
+Creating workflow function using linear model function and training data
+
+```{r}
+flu_wflow_bt_rn <- 
+  workflow() %>% 
+  add_model(lr_mod2) %>% 
+  add_recipe(n_flu_bt_rn)
+```
+
+Creating function that can be used to prepare the recipe and train the model
+
+```{r}
+flu_fit_bt_rn <- 
+  flu_wflow_bt_rn %>% 
+  fit(data = train_data2)
+```
+
+Extracting the model objects from the workflow
+
+```{r}
+flu_fit_bt_rn %>% 
+  extract_fit_parsnip() %>% 
+  tidy()
+```
+
+Using trained workflow to make predictions on testing data
+
+```{r}
+predict(flu_fit_bt_rn, test_data2)
+
+flu_aug_bt_rn <- 
+  augment(flu_fit_bt_rn, test_data2)
+
+# The data look like: 
+flu_aug_bt_rn %>%
+  select(BodyTemp, .pred)
+```
+
+RMSE
+
+```{r}
+flu_aug_bt_rn %>%
+  rmse(truth = BodyTemp, .pred)
+```
+
+The model with all predictors has a lower RMSE.
