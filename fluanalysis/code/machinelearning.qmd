@@ -1,0 +1,328 @@
+---
+title: "Machine Learning"
+editor: visual
+---
+
+```{r warning =FALSE, message = FALSE}
+library(here)
+library(tidyverse)
+library(tidymodels)
+```
+
+Import lightly processed code...
+
+```{r}
+flu <- readRDS(here("fluanalysis/data/processed_data/flu.rds"))
+```
+
+#Feature/Variable removal Several symptoms exist within this dataset as a severity score and as Yes/No, and there is a duplicate for CoughYN... Fortunately for use, the name system of variables in this dataset makes this easy to achieve.
+
+```{r}
+flu <- flu %>% 
+  select(-ends_with("YN"), -matches("[0-9]"))
+```
+
+#Categorical/Ordinal predictors
+
+##the step below did not work flu_rec %\>% step_dummy(Weakness, CoughIntensity, Myalgia) %\>% step_ordinalscore()
+
+```{r}
+sev_score <- c("None", "Mild", "Moderate", "Severe")
+
+```
+
+#Low ("near-zero") variance predictors
+
+```{r}
+## Creating subset of binary predictors
+binary_vars <- flu %>%
+  select_if(~ is.factor(.) && nlevels(.) == 2)
+
+## Setting up logical vector where predictors have less than 50 entries equal 1.
+binary_vars_tab <- binary_vars %>%
+  summarise_all(~ sum(table(.) < 50))
+logi_vec <- binary_vars_tab == 1
+
+## Use which to find the indices with 'TRUE' in the logical vector
+indices <- which(logi_vec)
+
+## ... extracting the names of the predictors
+remove_vars <- names(binary_vars_tab[indices])
+##Vision and hearing should be removed...
+
+# And removing the identified binary predictors 
+flu <- flu %>%
+  select(-all_of(remove_vars))
+```
+
+Now that the dataset has been processed a bit more, let's move on to the setting up our model.
+
+#Analysis code
+
+Next, we'll split the testing and training data
+
+```{r}
+## setting the seed 
+set.seed(123)
+## Put 3/4 of the data into the training set 
+data_split <- initial_split(flu, prop = 3/4)
+
+# Create data frames for the two sets:
+train_data <- training(data_split)
+test_data <- testing(data_split)
+
+
+```
+
+5x5 cross-validation
+
+```{r}
+set.seed(123)
+five_fold <- vfold_cv(train_data, v = 5, strata = BodyTemp)
+```
+
+Set the recipe
+
+```{r}
+flu_rec <- recipe(BodyTemp ~ ., data = train_data) %>% 
+  step_dummy(all_predictors())
+```
+
+Then we'll set up a null model
+
+```{r}
+null_mod <- null_model() %>% 
+  set_engine("parsnip") %>% 
+  set_mode("regression") %>% 
+  translate()
+```
+
+Null workflow
+
+```{r}
+null_wflow <- workflow() %>%
+  add_model(null_mod) %>%
+  add_recipe(flu_rec)
+```
+
+```{r}
+null_fit <- null_wflow %>% 
+  fit(data=train_data)
+
+null_fit %>%
+  extract_fit_parsnip() %>%
+  tidy()
+
+```
+
+Mean body temp is 98.97
+
+```{r}
+null_aug <- augment(null_fit, train_data) 
+
+null_aug %>% 
+  select(BodyTemp, .pred) %>%
+  rmse(BodyTemp, .pred)
+```
+
+Tree
+
+```{r}
+library(rpart)
+
+tune_spec <- 
+  decision_tree(
+    cost_complexity = tune(),
+    tree_depth = tune()
+  ) %>% 
+  set_engine("rpart") %>% 
+  set_mode("regression")
+tune_spec
+
+tree_grid <- grid_regular(cost_complexity(),
+                          tree_depth(),
+                          levels = 5)
+tree_grid
+tree_grid %>% 
+  count(tree_depth)
+```
+
+```{r warning=FALSE}
+## workflow for decision tree
+tree_wf <- workflow() %>%
+  add_model(tune_spec) %>%
+  add_recipe(flu_rec)
+
+tree_res <- 
+  tree_wf %>% 
+  tune_grid(resamples = five_fold,
+    grid = tree_grid)
+
+```
+
+```{r}
+tree_res %>% 
+  collect_metrics() 
+
+#visualize
+tree_res %>%
+  autoplot()
+
+#Selecting the best tree using rmse.
+best_tree <- tree_res %>%
+  select_best(metric = "rmse") 
+
+best_tree 
+
+```
+
+```{r}
+tree_ff_wf <- tree_wf %>% 
+  finalize_workflow(best_tree)
+
+tree_ff_wf %>% 
+  fit(train_data)
+```
+
+#Lasso
+
+```{r}
+##Setting up recipe.
+flu_rec_lasso <- recipe(BodyTemp ~ ., data = train_data) %>% 
+  step_dummy(all_predictors())
+  
+lasso_spec <- linear_reg(penalty = 0.1, mixture = 1) %>%
+  set_engine("glmnet")
+
+#Setting work flow
+flu_wflow <- workflow() %>%
+  add_recipe(flu_rec_lasso)
+
+flu_lasso_fit <- flu_wflow %>%
+  add_model(lasso_spec) %>%
+  fit(data = train_data)
+
+flu_lasso_fit %>%
+  pull_workflow_fit() %>%
+  tidy()
+```
+
+```{r}
+##Tune Lasso parameters
+tune_spec <- linear_reg(penalty = tune(), mixture = 1) %>%
+  set_engine("glmnet")
+
+lambda_grid <- grid_regular(penalty(), levels = 50)
+```
+
+```{r}
+# tune the grid using our workflow object.
+doParallel::registerDoParallel()
+
+set.seed(2020)
+lasso_grid <- tune_grid(
+  flu_wflow %>% add_model(tune_spec),
+  resamples = five_fold,
+  grid = lambda_grid)
+```
+
+Let take a look at the results
+
+```{r}
+lasso_grid %>%
+  collect_metrics()
+
+lasso_grid %>% 
+  autoplot
+```
+
+```{r}
+#Let's find the parameter with the lowest rmse
+lowest_rmse <- lasso_grid %>%
+  select_best("rmse")
+
+final_lasso_wf <- finalize_workflow(
+  flu_wflow %>% add_model(tune_spec),
+  lowest_rmse)
+```
+
+```{r}
+lasso_ff <- final_lasso_wf %>%
+  fit(train_data)
+lasso_ff 
+
+```
+
+```{r}
+##Let look at the most important predictors
+library(vip)
+
+lasso_ff %>%
+  pull_workflow_fit() %>%
+  vi(lambda = lowest_rmse$penalty) %>%
+  mutate(
+    Importance = abs(Importance),
+    Variable = fct_reorder(Variable, Importance)
+  ) %>%
+  ggplot(aes(x = Importance, y = Variable, fill = Sign)) +
+  geom_col() +
+  scale_x_continuous(expand = c(0, 0)) +
+  labs(y = NULL)
+```
+
+We can see that subjective fever is the most important predictor of body temperature and sneezing negatively correlated with body temperature.
+
+##Random forest model
+
+```{r}
+rf_spec <- rand_forest(min_n = tune(),  
+                       trees = 1000) %>%
+  set_engine("ranger") %>%
+  set_mode("regression")
+
+rf_spec
+```
+
+Create tuning workflow for random forest model
+
+```{r}
+tune_wf <- workflow() %>%
+  add_recipe(flu_rec) %>%
+  add_model(rf_spec)
+```
+
+```{r}
+doParallel::registerDoParallel()
+
+set.seed(345)
+tune_res <- tune_grid(
+  tune_wf,
+  resamples = five_fold,
+  grid = 20
+)
+
+#Visualize..
+tune_res %>% 
+  autoplot()
+
+best_rf <-   tune_res %>% 
+  select_best(metric = "rmse")
+
+rf_final_wf <- tune_wf %>%  finalize_workflow(best_rf)
+
+rf_final_wf %>% 
+  fit(data = train_data)
+  
+```
+
+Fitting the last model to testing data
+
+```{r}
+set.seed(345)
+rf_final_fit <-
+  rf_final_wf %>%
+  last_fit(data_split)
+
+rf_final_fit %>% 
+  collect_metrics()
+```

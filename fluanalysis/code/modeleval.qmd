@@ -62,7 +62,7 @@ flu_fit %>%
   tidy()
 ```
 
-Usiing trained workflow to make predictions on testing data
+Using trained workflow to make predictions on testing data
 
 ```{r}
 predict(flu_fit, test_data)
@@ -90,7 +90,7 @@ Alternative model
 
 ```{r}
 flu_r <- 
-  recipe(Nausea ~ Myalgia, data = train_data) 
+  recipe(Nausea ~ RunnyNose, data = train_data) 
 ```
 
 Creating workflow function using lr model function and training data
@@ -142,7 +142,7 @@ flu_aug_r %>%
   roc_auc(truth = Nausea, .pred_No) 
 ```
 
-The model using only weakness as a predictor for nausea performed more poorly than the full model
+The model using only runny nose as a predictor for nausea performed much more poorly than the full model
 
 # This section added by KATIE WELLS
 
