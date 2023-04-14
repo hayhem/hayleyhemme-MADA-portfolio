@@ -173,7 +173,6 @@ best_tree <- tree_res %>%
   select_best(metric = "rmse") 
 
 best_tree 
-
 ```
 
 ```{r}
@@ -185,7 +184,6 @@ tree_ff_wf %>%
 ```
 
 #Lasso
-
 ```{r}
 ##Setting up recipe.
 flu_rec_lasso <- recipe(BodyTemp ~ ., data = train_data) %>% 
@@ -227,7 +225,6 @@ lasso_grid <- tune_grid(
 ```
 
 Let take a look at the results
-
 ```{r}
 lasso_grid %>%
   collect_metrics()
@@ -250,7 +247,6 @@ final_lasso_wf <- finalize_workflow(
 lasso_ff <- final_lasso_wf %>%
   fit(train_data)
 lasso_ff 
-
 ```
 
 ```{r}

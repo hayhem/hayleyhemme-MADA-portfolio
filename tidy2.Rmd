@@ -61,32 +61,14 @@ cagefreepercentages %>%
   slice(c(1, n())) %>%
   bind_rows()
 ```
-The cage-free percentages data goes back to 2007, while the egg production data only goes back to 2016. The most recent observations in both datasets is Feb. 28, 2021. 
-
-My data with the hypothesis that the number of eggs produced per hen differs based on the type of egg product (hatchling or table eggs). 
-
-H0: There is no difference between the number of eggs produced per hen.
-HA: There is a difference between the number of eggs produced per hen, and table eggs are produced at higher rates compared to hatchling eggs.
-
-The outcome interest is the rate of egg production, which I will name `rate_prod` for rate of production. 
-```{r}
-eggproduction <- eggproduction %>% 
-  group_by(prod_type) %>% 
-  mutate(rate_prod  = n_eggs/n_hens)
-```
 
 Let's prepare the datasets for a merge, which will hopefully this will make things easy to work with. I'll start by making a variable that pulls just the month and year from 'observed_month' to make merge the datasets more seamless.
 ```{r}
 cagefreepercentages <- cagefreepercentages %>% 
-  mutate(mon_yr = format_ISO8601(observed_month, precision = "ym"),
-         mon = format(observed_month, "%m"),
-        mon = as.factor(mon)) #only month
+  mutate(mon_yr = format_ISO8601(observed_month, precision = "ym"))
 
 eggproduction <- eggproduction %>% 
-  mutate(mon_yr = format_ISO8601(observed_month, precision = "ym"), 
-         mon = format(observed_month, "%m"),
-        mon = as.factor(mon))
-         
+  mutate(mon_yr = format_ISO8601(observed_month, precision = "ym"))
 ```
 
 I'll do a bit more tidying up by using the computed estimates and by removing unnecessary variables
@@ -101,7 +83,7 @@ eggproduction_clean <- eggproduction %>%
 
 Now, we'll use inner join to merge by the mon_yr only that appear in both datasets
 ```{r}
-eggs_df <- inner_join(eggproduction_clean, cagefreepercentages_clean, by = join_by(mon_yr, mon))
+eggs_df <- inner_join(eggproduction_clean, cagefreepercentages_clean, by = join_by(mon_yr))
 
 eggs_df <- eggs_df %>% 
   mutate(prod_type = as.factor(prod_type),
@@ -109,7 +91,16 @@ eggs_df <- eggs_df %>%
 
 eggs_df$prod_type <- relevel(eggs_df$prod_type, ref = "table eggs")
 
-#eggs_clean <- eggs_df %>% select(-mon_yr)
+eggs_clean <- eggs_df %>% select(-mon_yr)
+```
+
+```{r}
+eggs_df <- eggs_df %>%
+  mutate(all_cagefree = case_when(prod_process == "all" ~ "No",
+                                          TRUE ~ "Yes"))
+
+
+
 ```
 
 Let's split the data into test and train
@@ -117,30 +108,30 @@ Let's split the data into test and train
 ## setting the seed 
 set.seed(123)
 ## Put 3/4 of the data into the training set 
-data_split <- initial_split(eggs_df, prop = 3/4)
+data_split <- initial_split(eggs_clean, prop = 3/4)
 
 # Create data frames for the two sets:
 train_data <- training(data_split)
 test_data <- testing(data_split)
+```
 
-egg_metrics <- metric_set(accuracy, roc_auc, mn_log_loss)
-
-#Cross validation
+Cross validation
+```{r}
 set.seed(123)
-five_fold <- vfold_cv(train_data, v = 5, strata = prod_type)
+five_fold <- vfold_cv(train_data, v = 5)
 ```
 
 Set the recipe
 ```{r}
-eggs_rec <- recipe(prod_type ~ prod_process + mon + rate_prod, data = train_data) %>% 
-  step_dummy(prod_process, mon)
+eggs_rec <- recipe(n_eggs ~ ., data = train_data) %>% 
+  step_dummy(prod_type, prod_process)
 ```
 
 Now let's set up a null model
 ```{r}
 null_mod <- null_model() %>% 
   set_engine("parsnip") %>% 
-  set_mode("classification")
+  set_mode("regression")
 ```
 
 Null workflow
@@ -157,6 +148,17 @@ null_fit <- null_wflow %>%
 null_fit %>%
   extract_fit_parsnip() %>%
   tidy()
+
+fit_resamples(null_wflow, resamples = five_fold) %>%
+  collect_metrics()
+```
+
+```{r}
+null_aug <- augment(null_fit, train_data) 
+
+null_aug %>% 
+  select(n_eggs, .pred) %>%
+  rmse(n_eggs, .pred)
 ```
 
 Decision Tree
@@ -168,7 +170,7 @@ tune_spec <-
     cost_complexity = tune(),
     tree_depth = tune()) %>% 
   set_engine("rpart") %>% 
-  set_mode("classification")
+  set_mode("regression")
 
 tree_grid <- grid_regular(cost_complexity(),
                           tree_depth(),
@@ -197,58 +199,109 @@ tree_res %>%
 
 #Selecting the best tree using rmse.
 best_tree <- tree_res %>%
-  select_best(metric = "roc_auc") 
+  select_best(metric = "rmse") 
+
+tree_ff_wf <- tree_wf %>% 
+  finalize_workflow(best_tree)
+
+tree_ff_wf %>% 
+  fit(train_data)
 ```
 
-
-Logistic regression
+#Lasso
 ```{r}
-log_spec <- logistic_reg() %>%
-  set_engine(engine = "glm") %>%
-  set_mode("classification")
-```
+lasso_spec <- linear_reg(penalty = 0.1, mixture = 1) %>%
+  set_engine("glmnet")
 
-Creating workflow object
-```{r}
-log_wflow <- 
-   workflow() %>% 
-   add_recipe(eggs_rec) %>% 
-   add_model(log_spec)
-```
+#Setting work flow
+eggs_wflow <- workflow() %>%
+  add_recipe(eggs_rec)
 
-Creating trained workflow
-```{r}
-logreg_fit <- log_wflow %>% 
+eggs_lasso_fit <- eggs_wflow %>%
+  add_model(lasso_spec) %>%
   fit(data = train_data)
+
+eggs_lasso_fit %>%
+  pull_workflow_fit() %>%
+  tidy()
 ```
 
 ```{r}
-logreg_fit %>% 
-  extract_fit_parsnip()
+##Tune Lasso parameters
+tune_spec <- linear_reg(penalty = tune(), mixture = 1) %>%
+  set_engine("glmnet")
+
+lambda_grid <- grid_regular(penalty(), levels = 50)
 ```
 
-
-Random forest
 ```{r}
-library(ranger)
+# tune the grid using our workflow object.
+doParallel::registerDoParallel()
 
-rf_spec <- 
-  rand_forest(min_n = tune()) %>% 
-  set_engine("ranger", importance = "impurity") %>% 
-  set_mode("classification")
+set.seed(2020)
+lasso_grid <- tune_grid(
+  eggs_wflow %>% add_model(tune_spec),
+  resamples = five_fold,
+  grid = lambda_grid)
 ```
 
-Random forest workflow
+Let take a look at the results
+
 ```{r}
-rf_wflow <- workflow() %>%
- add_recipe(eggs_rec) %>% 
- add_model(rf_spec) 
+lasso_grid %>%
+  collect_metrics()
+
+lasso_grid %>% 
+  autoplot
 ```
 
-Fit a model
 ```{r}
-rf_wflow_fit <- rf_wflow %>% 
-  fit(data = train_data)
+#Let's find the parameter with the lowest rmse
+lowest_rmse <- lasso_grid %>%
+  select_best("rmse")
+
+final_lasso_wf <- finalize_workflow(
+  eggs_wflow %>% add_model(tune_spec),
+  lowest_rmse)
+```
+
+```{r}
+lasso_ff <- final_lasso_wf %>%
+  fit(train_data)
+lasso_ff 
+```
+
+```{r}
+##Let look at the most important predictors
+library(vip)
+
+lasso_ff %>%
+  pull_workflow_fit() %>%
+  vi(lambda = lowest_rmse$penalty) %>%
+  mutate(
+    Importance = abs(Importance),
+    Variable = fct_reorder(Variable, Importance)
+  ) %>%
+  ggplot(aes(x = Importance, y = Variable, fill = Sign)) +
+  geom_col() +
+  scale_x_continuous(expand = c(0, 0)) +
+  labs(y = NULL)
+```
+Hatchling eggs have a negative association with the number of eggs produced.
+
+##Random forest model
+```{r}
+rf_spec <- rand_forest(min_n = tune(),  
+                       trees = 1000) %>%
+  set_engine("ranger") %>%
+  set_mode("regression")
+```
+
+Create tuning workflow for random forest model
+```{r}
+tune_wf <- workflow() %>%
+  add_recipe(eggs_rec) %>%
+  add_model(rf_spec)
 ```
 
 ```{r}
@@ -256,40 +309,59 @@ doParallel::registerDoParallel()
 
 set.seed(345)
 tune_res <- tune_grid(
-  rf_wflow,
+  tune_wf,
   resamples = five_fold,
   grid = 20)
 
 #Visualize..
 tune_res %>% 
   autoplot()
+```
 
-best_rf <-   tune_res %>% 
-  select_best(metric = "roc_auc")
+```{r}
+best_rf <- tune_res %>% 
+  select_best(metric = "rmse")
 
-rf_final_wf <- rf_wflow %>%  finalize_workflow(best_rf)
+rf_final_wf <- tune_wf %>%
+  finalize_workflow(best_rf)
 
 rf_final_wf %>% 
   fit(data = train_data)
 ```
 
+Fitting the last model to testing data
+```{r}
+set.seed(345)
+rf_final_fit <-
+  rf_final_wf %>%
+  last_fit(data_split)
 
-Multinomial regression via neural net
+rf_final_fit %>% 
+  collect_metrics()
+```
+
+Multinomial regression via nnet
 ```{r}
 # Specify a multinomial regression via nnet
 multireg_spec <- multinom_reg(penalty = 1) %>% 
   set_engine("nnet") %>% 
   set_mode("classification")
 
-# Train a multinomial regression model
+# Train a multinomial regression model without any preprocessing
 set.seed(2056)
-multireg_wf <- workflow() %>% 
-  add_model(multireg_spec) %>% 
-  add_recipe(eggs_rec)
+multireg_fit <- multireg_spec %>% 
+  fit(prod_type ~ ., data = train_data)
 
 # Print the model
-multireg_fit %>% 
-  tidy()
+multireg_fit
 ```
 
-
+```{r}
+# Make predictions for the test set
+eggs_results <- test_data %>%
+  select(prod_type) %>% 
+  bind_cols(multireg_fit %>% 
+              predict(new_data = test_data)) %>% 
+  bind_cols(multireg_fit %>% 
+              predict(new_data = test_data, type = "prob"))
+```
