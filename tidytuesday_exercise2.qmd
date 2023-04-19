@@ -184,7 +184,7 @@ tree_wf <- workflow() %>%
 tree_res <- 
   tree_wf %>% 
   tune_grid(resamples = five_fold,
-    grid = tree_grid)
+    grid = tree_grid) 
 ```
 
 ```{r}
@@ -199,7 +199,7 @@ tree_res %>%
 best_tree <- tree_res %>%
   select_best(metric = "roc_auc") 
 ```
-
+I am unsure if I am interpretting this correctly, but it seems like accuracy and ROC_AUC were perfect?
 
 Logistic regression
 ```{r}
@@ -208,7 +208,7 @@ log_spec <- logistic_reg() %>%
   set_mode("classification")
 ```
 
-Creating workflow object
+Creating workflow object for logistic regression
 ```{r}
 log_wflow <- 
    workflow() %>% 
@@ -222,11 +222,11 @@ logreg_fit <- log_wflow %>%
   fit(data = train_data)
 ```
 
+Pulling model fit
 ```{r}
 logreg_fit %>% 
-  extract_fit_parsnip()
+  extract_fit_parsnip()  
 ```
-
 
 Random forest
 ```{r}
@@ -267,12 +267,13 @@ tune_res %>%
 best_rf <-   tune_res %>% 
   select_best(metric = "roc_auc")
 
-rf_final_wf <- rf_wflow %>%  finalize_workflow(best_rf)
+rf_final_wf <- rf_wflow %>%
+  finalize_workflow(best_rf)
 
 rf_final_wf %>% 
   fit(data = train_data)
 ```
-
+Same results as above...
 
 Multinomial regression via neural net
 ```{r}
@@ -281,15 +282,53 @@ multireg_spec <- multinom_reg(penalty = 1) %>%
   set_engine("nnet") %>% 
   set_mode("classification")
 
-# Train a multinomial regression model
-set.seed(2056)
+#trying to set workflow
 multireg_wf <- workflow() %>% 
   add_model(multireg_spec) %>% 
   add_recipe(eggs_rec)
 
-# Print the model
-multireg_fit %>% 
+# Train a multinomial regression model ##
+set.seed(2056)
+multireg_fit <- multireg_spec %>% 
+  fit(prod_type ~ prod_process + mon + rate_prod, data = train_data)
+  
+#print model
+multireg_fit %>%
   tidy()
 ```
 
+All the models appears to perform similarly... the logistic regression model is the might be the simplest model, so let's use that to to test model performance against the test_data
+```{r}
+# Make predictions for the test set
+eggs_results <- test_data %>% 
+  select(prod_type) %>% 
+  bind_cols(logreg_fit %>% 
+              predict(new_data = test_data)) %>% 
+  bind_cols(logreg_fit %>% 
+              predict(new_data = test_data, type = "prob"))
 
+# Print predictions
+eggs_results %>% 
+  slice_head(n = 54)
+```
+
+```{r}
+#Confusion matrix
+conf_mat(eggs_results,
+         truth = prod_type,
+         estimate = .pred_class) 
+## Did not work like expected...
+
+#pulling accuracy
+accuracy(eggs_results, 
+         truth = prod_type,
+         estimate = .pred_class)
+##Is 100% accurate
+
+## trying to pull ROC-AUC to see if performance of predictive model is good
+roc_auc(eggs_results,
+        truth = prod_type,
+        `.pred_hatching eggs`) 
+##estimate is NA?
+```
+As far as I can tell, it seemed like the logistic regression model was able to predict prod_type perfectly. Intuitively, it seems like these models should not performed perfectly, but in looking at the data it is very clear that hens producing table eggs lay significantly more eggs than those producing hatching eggs. Unfortunately, my knowledge of tidymodels has limited my ability to troubleshoot potential issues in these classification models...
